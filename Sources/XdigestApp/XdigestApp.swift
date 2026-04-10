@@ -26,12 +26,27 @@ struct XdigestApp: App {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private var serverHandle: ServerHandle?
+    private var setupWindow: NSWindow?
     private var isGenerating = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         setupStatusItem()
-        startServer()
+        runSetupCheck()
+    }
+
+    private func runSetupCheck() {
+        let issues = checkSetup()
+        if issues.isEmpty {
+            setupWindow?.close()
+            setupWindow = nil
+            startServer()
+        } else {
+            NSApp.setActivationPolicy(.regular)
+            setupWindow = showSetupWindow(issues: issues) { [weak self] in
+                self?.runSetupCheck()
+            }
+        }
     }
 
     // MARK: - Menu Bar
@@ -107,6 +122,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Server
 
     private func startServer() {
+        NSApp.setActivationPolicy(.accessory)
         let initialDigest = Pipeline.loadDigest() ?? Digest(date: "", sections: [])
         Task {
             do {
