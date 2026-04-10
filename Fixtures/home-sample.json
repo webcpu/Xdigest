@@ -1,0 +1,2371 @@
+[
+  {
+    "id": "2042135870183239802",
+    "text": "https://t.co/FEMJgzLQzt",
+    "createdAt": "Thu Apr 09 07:01:47 +0000 2026",
+    "replyCount": 7761,
+    "retweetCount": 12604,
+    "likeCount": 135254,
+    "conversationId": "2042135870183239802",
+    "author": {
+      "username": "elonmusk",
+      "name": "Elon Musk"
+    },
+    "authorId": "44196397",
+    "media": [
+      {
+        "type": "video",
+        "url": "https://pbs.twimg.com/amplify_video_thumb/2042129777360764928/img/xXD4k_8lJs6aXrY5.jpg",
+        "width": 560,
+        "height": 560,
+        "previewUrl": "https://pbs.twimg.com/amplify_video_thumb/2042129777360764928/img/xXD4k_8lJs6aXrY5.jpg:small",
+        "videoUrl": "https://video.twimg.com/amplify_video/2042129777360764928/vid/avc1/560x560/AU7ZPdC-Ak9x_0ye.mp4?tag=24",
+        "durationMs": 10041
+      }
+    ],
+    "_raw": {
+      "__typename": "Tweet",
+      "core": {
+        "user_results": {
+          "result": {
+            "__typename": "User",
+            "affiliates_highlighted_label": {
+              "label": {
+                "badge": {
+                  "url": "https://pbs.twimg.com/profile_images/1955359038532653056/OSHY3ewP_bigger.jpg"
+                },
+                "description": "X",
+                "url": {
+                  "url": "https://twitter.com/X",
+                  "urlType": "DeepLink"
+                },
+                "userLabelDisplayType": "Badge",
+                "userLabelType": "BusinessLabel"
+              }
+            },
+            "avatar": {
+              "image_url": "https://pbs.twimg.com/profile_images/2035314704307081216/71U1ftM3_normal.jpg"
+            },
+            "core": {
+              "created_at": "Tue Jun 02 20:12:29 +0000 2009",
+              "name": "Elon Musk",
+              "screen_name": "elonmusk"
+            },
+            "dm_permissions": {
+              "can_dm": false
+            },
+            "follow_request_sent": false,
+            "has_graduated_access": true,
+            "id": "VXNlcjo0NDE5NjM5Nw==",
+            "is_blue_verified": true,
+            "legacy": {
+              "default_profile": false,
+              "default_profile_image": false,
+              "description": "https://t.co/dDtDyVssfm",
+              "entities": {
+                "description": {
+                  "urls": [
+                    {
+                      "display_url": "Terafab.ai",
+                      "expanded_url": "http://Terafab.ai",
+                      "indices": [
+                        0,
+                        23
+                      ],
+                      "url": "https://t.co/dDtDyVssfm"
+                    }
+                  ]
+                }
+              },
+              "fast_followers_count": 0,
+              "favourites_count": 221775,
+              "follow_request_sent": false,
+              "followers_count": 237760393,
+              "friends_count": 1311,
+              "has_custom_timelines": true,
+              "is_translator": false,
+              "listed_count": 167776,
+              "media_count": 4442,
+              "normal_followers_count": 237760393,
+              "notifications": false,
+              "pinned_tweet_ids_str": [
+                "2041754402239975479"
+              ],
+              "possibly_sensitive": false,
+              "profile_banner_url": "https://pbs.twimg.com/profile_banners/44196397/1774145451",
+              "profile_interstitial_type": "",
+              "statuses_count": 100947,
+              "translator_type": "none",
+              "want_retweets": true,
+              "withheld_in_countries": []
+            },
+            "location": {
+              "location": ""
+            },
+            "media_permissions": {
+              "can_media_tag": false
+            },
+            "parody_commentary_fan_label": "None",
+            "privacy": {
+              "protected": false
+            },
+            "professional": {
+              "category": [],
+              "professional_type": "Creator",
+              "rest_id": "1679729435447275522"
+            },
+            "profile_bio": {
+              "description": "https://t.co/dDtDyVssfm"
+            },
+            "profile_image_shape": "Circle",
+            "relationship_perspectives": {
+              "blocked_by": false,
+              "blocking": false,
+              "followed_by": false,
+              "following": true,
+              "muting": false
+            },
+            "rest_id": "44196397",
+            "super_follow_eligible": true,
+            "super_followed_by": false,
+            "super_following": false,
+            "tipjar_settings": {
+              "is_enabled": false
+            },
+            "verification": {
+              "verified": false
+            }
+          }
+        }
+      },
+      "edit_control": {
+        "edit_tweet_ids": [
+          "2042135870183239802"
+        ],
+        "editable_until_msecs": "1775721707000",
+        "edits_remaining": "5",
+        "is_edit_eligible": true
+      },
+      "grok_analysis_button": true,
+      "is_translatable": false,
+      "legacy": {
+        "bookmark_count": 6187,
+        "bookmarked": false,
+        "conversation_id_str": "2042135870183239802",
+        "created_at": "Thu Apr 09 07:01:47 +0000 2026",
+        "display_text_range": [
+          0,
+          23
+        ],
+        "entities": {
+          "hashtags": [],
+          "media": [
+            {
+              "additional_media_info": {
+                "monetizable": true,
+                "source_user": {
+                  "user_results": {
+                    "result": {
+                      "__typename": "User",
+                      "affiliates_highlighted_label": {},
+                      "avatar": {
+                        "image_url": "https://pbs.twimg.com/profile_images/2007521630470189056/ld-ZVQWj_normal.jpg"
+                      },
+                      "core": {
+                        "created_at": "Sat Oct 04 10:54:24 +0000 2025",
+                        "name": "X CEO",
+                        "screen_name": "XCEO_eth"
+                      },
+                      "dm_permissions": {
+                        "can_dm": true
+                      },
+                      "follow_request_sent": false,
+                      "has_graduated_access": true,
+                      "id": "VXNlcjoxOTc0NDI3ODI2MDAzODU3NDA4",
+                      "is_blue_verified": true,
+                      "legacy": {
+                        "default_profile": true,
+                        "default_profile_image": false,
+                        "description": "Parody account 🐕 NOT Elon or X Corp (they wish they had my woof) 100% satire\n\n.... But I am the X CEO\n0xc3f42ca0dcdfc9390a4ef881cb25116f5682def1",
+                        "entities": {
+                          "description": {
+                            "urls": []
+                          },
+                          "url": {
+                            "urls": [
+                              {
+                                "display_url": "flokixceo.meme",
+                                "expanded_url": "https://www.flokixceo.meme/",
+                                "indices": [
+                                  0,
+                                  23
+                                ],
+                                "url": "https://t.co/opkI4OjIte"
+                              }
+                            ]
+                          }
+                        },
+                        "fast_followers_count": 0,
+                        "favourites_count": 788,
+                        "follow_request_sent": false,
+                        "followers_count": 2042,
+                        "friends_count": 34,
+                        "has_custom_timelines": false,
+                        "is_translator": false,
+                        "listed_count": 4,
+                        "media_count": 2176,
+                        "normal_followers_count": 2042,
+                        "notifications": false,
+                        "pinned_tweet_ids_str": [
+                          "2003135506884792786"
+                        ],
+                        "possibly_sensitive": false,
+                        "profile_banner_url": "https://pbs.twimg.com/profile_banners/1974427826003857408/1764750834",
+                        "profile_interstitial_type": "",
+                        "statuses_count": 2977,
+                        "translator_type": "none",
+                        "url": "https://t.co/opkI4OjIte",
+                        "want_retweets": false,
+                        "withheld_in_countries": []
+                      },
+                      "location": {
+                        "location": ""
+                      },
+                      "media_permissions": {
+                        "can_media_tag": true
+                      },
+                      "parody_commentary_fan_label": "Parody",
+                      "privacy": {
+                        "protected": false
+                      },
+                      "profile_bio": {
+                        "description": "Parody account 🐕 NOT Elon or X Corp (they wish they had my woof) 100% satire\n\n.... But I am the X CEO\n0xc3f42ca0dcdfc9390a4ef881cb25116f5682def1"
+                      },
+                      "profile_description_language": "en",
+                      "profile_image_shape": "Circle",
+                      "relationship_perspectives": {
+                        "blocked_by": false,
+                        "blocking": false,
+                        "followed_by": false,
+                        "following": false,
+                        "muting": false
+                      },
+                      "rest_id": "1974427826003857408",
+                      "super_follow_eligible": false,
+                      "super_followed_by": false,
+                      "super_following": false,
+                      "tipjar_settings": {},
+                      "verification": {
+                        "verified": false
+                      }
+                    }
+                  }
+                }
+              },
+              "display_url": "pic.x.com/FEMJgzLQzt",
+              "expanded_url": "https://x.com/XCEO_eth/status/2042130057536160229/video/1",
+              "ext_media_availability": {
+                "status": "Available"
+              },
+              "grok_post_id": "06696125-4f66-4fc9-a428-b4909868b4dc",
+              "id_str": "2042129777360764928",
+              "indices": [
+                0,
+                23
+              ],
+              "media_key": "13_2042129777360764928",
+              "media_results": {
+                "result": {
+                  "media_key": "13_2042129777360764928"
+                }
+              },
+              "media_url_https": "https://pbs.twimg.com/amplify_video_thumb/2042129777360764928/img/xXD4k_8lJs6aXrY5.jpg",
+              "original_info": {
+                "focus_rects": [],
+                "height": 560,
+                "width": 560
+              },
+              "sizes": {
+                "large": {
+                  "h": 560,
+                  "resize": "fit",
+                  "w": 560
+                },
+                "medium": {
+                  "h": 560,
+                  "resize": "fit",
+                  "w": 560
+                },
+                "small": {
+                  "h": 560,
+                  "resize": "fit",
+                  "w": 560
+                },
+                "thumb": {
+                  "h": 150,
+                  "resize": "crop",
+                  "w": 150
+                }
+              },
+              "source_status_id_str": "2042130057536160229",
+              "source_user_id_str": "1974427826003857408",
+              "type": "video",
+              "url": "https://t.co/FEMJgzLQzt",
+              "video_info": {
+                "aspect_ratio": [
+                  1,
+                  1
+                ],
+                "duration_millis": 10041,
+                "variants": [
+                  {
+                    "content_type": "application/x-mpegURL",
+                    "url": "https://video.twimg.com/amplify_video/2042129777360764928/pl/gqs0vaSnpBkoJhmb.m3u8?tag=24&v=ca5"
+                  },
+                  {
+                    "bitrate": 800000,
+                    "content_type": "video/mp4",
+                    "url": "https://video.twimg.com/amplify_video/2042129777360764928/vid/avc1/320x320/yn7pHNqSWJ9Q__7E.mp4?tag=24"
+                  },
+                  {
+                    "bitrate": 5184000,
+                    "content_type": "video/mp4",
+                    "url": "https://video.twimg.com/amplify_video/2042129777360764928/vid/avc1/560x560/AU7ZPdC-Ak9x_0ye.mp4?tag=24"
+                  }
+                ]
+              }
+            }
+          ],
+          "symbols": [],
+          "timestamps": [],
+          "urls": [],
+          "user_mentions": []
+        },
+        "extended_entities": {
+          "media": [
+            {
+              "additional_media_info": {
+                "monetizable": true,
+                "source_user": {
+                  "user_results": {
+                    "result": {
+                      "__typename": "User",
+                      "affiliates_highlighted_label": {},
+                      "avatar": {
+                        "image_url": "https://pbs.twimg.com/profile_images/2007521630470189056/ld-ZVQWj_normal.jpg"
+                      },
+                      "core": {
+                        "created_at": "Sat Oct 04 10:54:24 +0000 2025",
+                        "name": "X CEO",
+                        "screen_name": "XCEO_eth"
+                      },
+                      "dm_permissions": {
+                        "can_dm": true
+                      },
+                      "follow_request_sent": false,
+                      "has_graduated_access": true,
+                      "id": "VXNlcjoxOTc0NDI3ODI2MDAzODU3NDA4",
+                      "is_blue_verified": true,
+                      "legacy": {
+                        "default_profile": true,
+                        "default_profile_image": false,
+                        "description": "Parody account 🐕 NOT Elon or X Corp (they wish they had my woof) 100% satire\n\n.... But I am the X CEO\n0xc3f42ca0dcdfc9390a4ef881cb25116f5682def1",
+                        "entities": {
+                          "description": {
+                            "urls": []
+                          },
+                          "url": {
+                            "urls": [
+                              {
+                                "display_url": "flokixceo.meme",
+                                "expanded_url": "https://www.flokixceo.meme/",
+                                "indices": [
+                                  0,
+                                  23
+                                ],
+                                "url": "https://t.co/opkI4OjIte"
+                              }
+                            ]
+                          }
+                        },
+                        "fast_followers_count": 0,
+                        "favourites_count": 788,
+                        "follow_request_sent": false,
+                        "followers_count": 2042,
+                        "friends_count": 34,
+                        "has_custom_timelines": false,
+                        "is_translator": false,
+                        "listed_count": 4,
+                        "media_count": 2176,
+                        "normal_followers_count": 2042,
+                        "notifications": false,
+                        "pinned_tweet_ids_str": [
+                          "2003135506884792786"
+                        ],
+                        "possibly_sensitive": false,
+                        "profile_banner_url": "https://pbs.twimg.com/profile_banners/1974427826003857408/1764750834",
+                        "profile_interstitial_type": "",
+                        "statuses_count": 2977,
+                        "translator_type": "none",
+                        "url": "https://t.co/opkI4OjIte",
+                        "want_retweets": false,
+                        "withheld_in_countries": []
+                      },
+                      "location": {
+                        "location": ""
+                      },
+                      "media_permissions": {
+                        "can_media_tag": true
+                      },
+                      "parody_commentary_fan_label": "Parody",
+                      "privacy": {
+                        "protected": false
+                      },
+                      "profile_bio": {
+                        "description": "Parody account 🐕 NOT Elon or X Corp (they wish they had my woof) 100% satire\n\n.... But I am the X CEO\n0xc3f42ca0dcdfc9390a4ef881cb25116f5682def1"
+                      },
+                      "profile_description_language": "en",
+                      "profile_image_shape": "Circle",
+                      "relationship_perspectives": {
+                        "blocked_by": false,
+                        "blocking": false,
+                        "followed_by": false,
+                        "following": false,
+                        "muting": false
+                      },
+                      "rest_id": "1974427826003857408",
+                      "super_follow_eligible": false,
+                      "super_followed_by": false,
+                      "super_following": false,
+                      "tipjar_settings": {},
+                      "verification": {
+                        "verified": false
+                      }
+                    }
+                  }
+                }
+              },
+              "display_url": "pic.x.com/FEMJgzLQzt",
+              "expanded_url": "https://x.com/XCEO_eth/status/2042130057536160229/video/1",
+              "ext_media_availability": {
+                "status": "Available"
+              },
+              "grok_post_id": "06696125-4f66-4fc9-a428-b4909868b4dc",
+              "id_str": "2042129777360764928",
+              "indices": [
+                0,
+                23
+              ],
+              "media_key": "13_2042129777360764928",
+              "media_results": {
+                "result": {
+                  "media_key": "13_2042129777360764928"
+                }
+              },
+              "media_url_https": "https://pbs.twimg.com/amplify_video_thumb/2042129777360764928/img/xXD4k_8lJs6aXrY5.jpg",
+              "original_info": {
+                "focus_rects": [],
+                "height": 560,
+                "width": 560
+              },
+              "sizes": {
+                "large": {
+                  "h": 560,
+                  "resize": "fit",
+                  "w": 560
+                },
+                "medium": {
+                  "h": 560,
+                  "resize": "fit",
+                  "w": 560
+                },
+                "small": {
+                  "h": 560,
+                  "resize": "fit",
+                  "w": 560
+                },
+                "thumb": {
+                  "h": 150,
+                  "resize": "crop",
+                  "w": 150
+                }
+              },
+              "source_status_id_str": "2042130057536160229",
+              "source_user_id_str": "1974427826003857408",
+              "type": "video",
+              "url": "https://t.co/FEMJgzLQzt",
+              "video_info": {
+                "aspect_ratio": [
+                  1,
+                  1
+                ],
+                "duration_millis": 10041,
+                "variants": [
+                  {
+                    "content_type": "application/x-mpegURL",
+                    "url": "https://video.twimg.com/amplify_video/2042129777360764928/pl/gqs0vaSnpBkoJhmb.m3u8?tag=24&v=ca5"
+                  },
+                  {
+                    "bitrate": 800000,
+                    "content_type": "video/mp4",
+                    "url": "https://video.twimg.com/amplify_video/2042129777360764928/vid/avc1/320x320/yn7pHNqSWJ9Q__7E.mp4?tag=24"
+                  },
+                  {
+                    "bitrate": 5184000,
+                    "content_type": "video/mp4",
+                    "url": "https://video.twimg.com/amplify_video/2042129777360764928/vid/avc1/560x560/AU7ZPdC-Ak9x_0ye.mp4?tag=24"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "favorite_count": 135254,
+        "favorited": false,
+        "full_text": "https://t.co/FEMJgzLQzt",
+        "id_str": "2042135870183239802",
+        "is_quote_status": false,
+        "lang": "zxx",
+        "possibly_sensitive": false,
+        "possibly_sensitive_editable": true,
+        "quote_count": 1356,
+        "reply_count": 7761,
+        "retweet_count": 12604,
+        "retweeted": false,
+        "user_id_str": "44196397"
+      },
+      "rest_id": "2042135870183239802",
+      "source": "<a href=\"http://twitter.com/download/iphone\" rel=\"nofollow\">Twitter for iPhone</a>",
+      "unmention_data": {},
+      "views": {
+        "count": "35027731",
+        "state": "EnabledWithCount"
+      }
+    }
+  },
+  {
+    "id": "2042611756313571802",
+    "text": "RT @kenw_2: Kevin Spacey 凯文•史派西的英语一直有一种独特的魔力，让人会忍不住想要听下去，不管是在影视里还是现实中。 https://t.co/J7PzunBQCh",
+    "createdAt": "Fri Apr 10 14:32:47 +0000 2026",
+    "replyCount": 0,
+    "retweetCount": 255,
+    "likeCount": 0,
+    "conversationId": "2042611756313571802",
+    "author": {
+      "username": "AppleTrumpSOL",
+      "name": "Apple Trump"
+    },
+    "authorId": "901670084657250304",
+    "media": [
+      {
+        "type": "video",
+        "url": "https://pbs.twimg.com/amplify_video_thumb/2042532719704326144/img/voaBfutXU7oWIITz.jpg",
+        "width": 1920,
+        "height": 1080,
+        "previewUrl": "https://pbs.twimg.com/amplify_video_thumb/2042532719704326144/img/voaBfutXU7oWIITz.jpg:small",
+        "videoUrl": "https://video.twimg.com/amplify_video/2042532719704326144/vid/avc1/1920x1080/B36TLMGK3Qa34hgF.mp4?tag=21",
+        "durationMs": 446633
+      }
+    ],
+    "_raw": {
+      "__typename": "Tweet",
+      "core": {
+        "user_results": {
+          "result": {
+            "__typename": "User",
+            "affiliates_highlighted_label": {},
+            "avatar": {
+              "image_url": "https://pbs.twimg.com/profile_images/1788592395061481472/ZEzzX7xW_normal.jpg"
+            },
+            "core": {
+              "created_at": "Sun Aug 27 04:57:55 +0000 2017",
+              "name": "Apple Trump",
+              "screen_name": "AppleTrumpSOL"
+            },
+            "dm_permissions": {
+              "can_dm": true
+            },
+            "follow_request_sent": false,
+            "has_graduated_access": true,
+            "id": "VXNlcjo5MDE2NzAwODQ2NTcyNTAzMDQ=",
+            "is_blue_verified": false,
+            "legacy": {
+              "default_profile": true,
+              "default_profile_image": false,
+              "description": "Think different, invest Apple Trump",
+              "entities": {
+                "description": {
+                  "urls": []
+                }
+              },
+              "fast_followers_count": 0,
+              "favourites_count": 12801,
+              "follow_request_sent": false,
+              "followers_count": 90,
+              "friends_count": 2157,
+              "has_custom_timelines": false,
+              "is_translator": false,
+              "listed_count": 0,
+              "media_count": 3,
+              "normal_followers_count": 90,
+              "notifications": false,
+              "pinned_tweet_ids_str": [
+                "1786701408231932143"
+              ],
+              "possibly_sensitive": false,
+              "profile_banner_url": "https://pbs.twimg.com/profile_banners/901670084657250304/1714817738",
+              "profile_interstitial_type": "",
+              "statuses_count": 337,
+              "translator_type": "none",
+              "want_retweets": true,
+              "withheld_in_countries": []
+            },
+            "location": {
+              "location": ""
+            },
+            "media_permissions": {
+              "can_media_tag": false
+            },
+            "parody_commentary_fan_label": "None",
+            "privacy": {
+              "protected": true
+            },
+            "profile_bio": {
+              "description": "Think different, invest Apple Trump"
+            },
+            "profile_description_language": "en",
+            "profile_image_shape": "Circle",
+            "relationship_perspectives": {
+              "blocked_by": false,
+              "blocking": false,
+              "followed_by": true,
+              "following": true,
+              "muting": false
+            },
+            "rest_id": "901670084657250304",
+            "super_follow_eligible": false,
+            "super_followed_by": false,
+            "super_following": false,
+            "tipjar_settings": {
+              "is_enabled": true
+            },
+            "verification": {
+              "verified": false
+            }
+          }
+        }
+      },
+      "edit_control": {
+        "edit_tweet_ids": [
+          "2042611756313571802"
+        ],
+        "editable_until_msecs": "1775835167253",
+        "edits_remaining": "5",
+        "is_edit_eligible": false
+      },
+      "grok_analysis_button": true,
+      "is_translatable": true,
+      "legacy": {
+        "bookmark_count": 0,
+        "bookmarked": false,
+        "conversation_id_str": "2042611756313571802",
+        "created_at": "Fri Apr 10 14:32:47 +0000 2026",
+        "display_text_range": [
+          0,
+          94
+        ],
+        "entities": {
+          "hashtags": [],
+          "media": [
+            {
+              "additional_media_info": {
+                "monetizable": true,
+                "source_user": {
+                  "user_results": {
+                    "result": {
+                      "__typename": "User",
+                      "affiliates_highlighted_label": {},
+                      "avatar": {
+                        "image_url": "https://pbs.twimg.com/profile_images/1944368718231801856/MThgS-Qy_normal.jpg"
+                      },
+                      "core": {
+                        "created_at": "Thu Apr 30 13:22:37 +0000 2009",
+                        "name": "Ken W",
+                        "screen_name": "kenw_2"
+                      },
+                      "dm_permissions": {
+                        "can_dm": true
+                      },
+                      "follow_request_sent": false,
+                      "has_graduated_access": true,
+                      "id": "VXNlcjozNjY1OTk5MQ==",
+                      "is_blue_verified": true,
+                      "legacy": {
+                        "default_profile": true,
+                        "default_profile_image": false,
+                        "description": "An old friend, stay curious, stay human.",
+                        "entities": {
+                          "description": {
+                            "urls": []
+                          }
+                        },
+                        "fast_followers_count": 0,
+                        "favourites_count": 2583,
+                        "follow_request_sent": false,
+                        "followers_count": 169651,
+                        "friends_count": 466,
+                        "has_custom_timelines": true,
+                        "is_translator": false,
+                        "listed_count": 566,
+                        "media_count": 1868,
+                        "normal_followers_count": 169651,
+                        "notifications": false,
+                        "pinned_tweet_ids_str": [],
+                        "possibly_sensitive": false,
+                        "profile_banner_url": "https://pbs.twimg.com/profile_banners/36659991/1752408613",
+                        "profile_interstitial_type": "",
+                        "statuses_count": 6773,
+                        "translator_type": "none",
+                        "want_retweets": false,
+                        "withheld_in_countries": []
+                      },
+                      "location": {
+                        "location": "The Earth"
+                      },
+                      "media_permissions": {
+                        "can_media_tag": true
+                      },
+                      "parody_commentary_fan_label": "None",
+                      "privacy": {
+                        "protected": false
+                      },
+                      "profile_bio": {
+                        "description": "An old friend, stay curious, stay human."
+                      },
+                      "profile_description_language": "en",
+                      "profile_image_shape": "Circle",
+                      "relationship_perspectives": {
+                        "blocked_by": false,
+                        "blocking": false,
+                        "followed_by": false,
+                        "following": false,
+                        "muting": false
+                      },
+                      "rest_id": "36659991",
+                      "super_follow_eligible": false,
+                      "super_followed_by": false,
+                      "super_following": false,
+                      "tipjar_settings": {
+                        "is_enabled": false
+                      },
+                      "verification": {
+                        "verified": false
+                      }
+                    }
+                  }
+                }
+              },
+              "allow_download_status": {
+                "allow_download": true
+              },
+              "display_url": "pic.x.com/J7PzunBQCh",
+              "expanded_url": "https://x.com/kenw_2/status/2042532879326998962/video/1",
+              "ext_media_availability": {
+                "status": "Available"
+              },
+              "id_str": "2042532719704326144",
+              "indices": [
+                71,
+                94
+              ],
+              "media_key": "13_2042532719704326144",
+              "media_results": {
+                "result": {
+                  "media_key": "13_2042532719704326144"
+                }
+              },
+              "media_url_https": "https://pbs.twimg.com/amplify_video_thumb/2042532719704326144/img/voaBfutXU7oWIITz.jpg",
+              "original_info": {
+                "focus_rects": [],
+                "height": 1080,
+                "width": 1920
+              },
+              "sizes": {
+                "large": {
+                  "h": 1080,
+                  "resize": "fit",
+                  "w": 1920
+                },
+                "medium": {
+                  "h": 675,
+                  "resize": "fit",
+                  "w": 1200
+                },
+                "small": {
+                  "h": 383,
+                  "resize": "fit",
+                  "w": 680
+                },
+                "thumb": {
+                  "h": 150,
+                  "resize": "crop",
+                  "w": 150
+                }
+              },
+              "source_status_id_str": "2042532879326998962",
+              "source_user_id_str": "36659991",
+              "type": "video",
+              "url": "https://t.co/J7PzunBQCh",
+              "video_info": {
+                "aspect_ratio": [
+                  16,
+                  9
+                ],
+                "duration_millis": 446633,
+                "variants": [
+                  {
+                    "content_type": "application/x-mpegURL",
+                    "url": "https://video.twimg.com/amplify_video/2042532719704326144/pl/mrv2_bH1sUy2HzB8.m3u8?tag=21&v=850"
+                  },
+                  {
+                    "bitrate": 256000,
+                    "content_type": "video/mp4",
+                    "url": "https://video.twimg.com/amplify_video/2042532719704326144/vid/avc1/480x270/BjFqX30iAFsQjNBd.mp4?tag=21"
+                  },
+                  {
+                    "bitrate": 832000,
+                    "content_type": "video/mp4",
+                    "url": "https://video.twimg.com/amplify_video/2042532719704326144/vid/avc1/640x360/oaEKjoLSL8Q4iYAD.mp4?tag=21"
+                  },
+                  {
+                    "bitrate": 2176000,
+                    "content_type": "video/mp4",
+                    "url": "https://video.twimg.com/amplify_video/2042532719704326144/vid/avc1/1280x720/lG_Ts0DzJWnICxbd.mp4?tag=21"
+                  },
+                  {
+                    "bitrate": 10368000,
+                    "content_type": "video/mp4",
+                    "url": "https://video.twimg.com/amplify_video/2042532719704326144/vid/avc1/1920x1080/B36TLMGK3Qa34hgF.mp4?tag=21"
+                  }
+                ]
+              }
+            }
+          ],
+          "symbols": [],
+          "timestamps": [],
+          "urls": [],
+          "user_mentions": [
+            {
+              "id_str": "36659991",
+              "indices": [
+                3,
+                10
+              ],
+              "name": "Ken W",
+              "screen_name": "kenw_2"
+            }
+          ]
+        },
+        "extended_entities": {
+          "media": [
+            {
+              "additional_media_info": {
+                "monetizable": true,
+                "source_user": {
+                  "user_results": {
+                    "result": {
+                      "__typename": "User",
+                      "affiliates_highlighted_label": {},
+                      "avatar": {
+                        "image_url": "https://pbs.twimg.com/profile_images/1944368718231801856/MThgS-Qy_normal.jpg"
+                      },
+                      "core": {
+                        "created_at": "Thu Apr 30 13:22:37 +0000 2009",
+                        "name": "Ken W",
+                        "screen_name": "kenw_2"
+                      },
+                      "dm_permissions": {
+                        "can_dm": true
+                      },
+                      "follow_request_sent": false,
+                      "has_graduated_access": true,
+                      "id": "VXNlcjozNjY1OTk5MQ==",
+                      "is_blue_verified": true,
+                      "legacy": {
+                        "default_profile": true,
+                        "default_profile_image": false,
+                        "description": "An old friend, stay curious, stay human.",
+                        "entities": {
+                          "description": {
+                            "urls": []
+                          }
+                        },
+                        "fast_followers_count": 0,
+                        "favourites_count": 2583,
+                        "follow_request_sent": false,
+                        "followers_count": 169651,
+                        "friends_count": 466,
+                        "has_custom_timelines": true,
+                        "is_translator": false,
+                        "listed_count": 566,
+                        "media_count": 1868,
+                        "normal_followers_count": 169651,
+                        "notifications": false,
+                        "pinned_tweet_ids_str": [],
+                        "possibly_sensitive": false,
+                        "profile_banner_url": "https://pbs.twimg.com/profile_banners/36659991/1752408613",
+                        "profile_interstitial_type": "",
+                        "statuses_count": 6773,
+                        "translator_type": "none",
+                        "want_retweets": false,
+                        "withheld_in_countries": []
+                      },
+                      "location": {
+                        "location": "The Earth"
+                      },
+                      "media_permissions": {
+                        "can_media_tag": true
+                      },
+                      "parody_commentary_fan_label": "None",
+                      "privacy": {
+                        "protected": false
+                      },
+                      "profile_bio": {
+                        "description": "An old friend, stay curious, stay human."
+                      },
+                      "profile_description_language": "en",
+                      "profile_image_shape": "Circle",
+                      "relationship_perspectives": {
+                        "blocked_by": false,
+                        "blocking": false,
+                        "followed_by": false,
+                        "following": false,
+                        "muting": false
+                      },
+                      "rest_id": "36659991",
+                      "super_follow_eligible": false,
+                      "super_followed_by": false,
+                      "super_following": false,
+                      "tipjar_settings": {
+                        "is_enabled": false
+                      },
+                      "verification": {
+                        "verified": false
+                      }
+                    }
+                  }
+                }
+              },
+              "allow_download_status": {
+                "allow_download": true
+              },
+              "display_url": "pic.x.com/J7PzunBQCh",
+              "expanded_url": "https://x.com/kenw_2/status/2042532879326998962/video/1",
+              "ext_media_availability": {
+                "status": "Available"
+              },
+              "id_str": "2042532719704326144",
+              "indices": [
+                71,
+                94
+              ],
+              "media_key": "13_2042532719704326144",
+              "media_results": {
+                "result": {
+                  "media_key": "13_2042532719704326144"
+                }
+              },
+              "media_url_https": "https://pbs.twimg.com/amplify_video_thumb/2042532719704326144/img/voaBfutXU7oWIITz.jpg",
+              "original_info": {
+                "focus_rects": [],
+                "height": 1080,
+                "width": 1920
+              },
+              "sizes": {
+                "large": {
+                  "h": 1080,
+                  "resize": "fit",
+                  "w": 1920
+                },
+                "medium": {
+                  "h": 675,
+                  "resize": "fit",
+                  "w": 1200
+                },
+                "small": {
+                  "h": 383,
+                  "resize": "fit",
+                  "w": 680
+                },
+                "thumb": {
+                  "h": 150,
+                  "resize": "crop",
+                  "w": 150
+                }
+              },
+              "source_status_id_str": "2042532879326998962",
+              "source_user_id_str": "36659991",
+              "type": "video",
+              "url": "https://t.co/J7PzunBQCh",
+              "video_info": {
+                "aspect_ratio": [
+                  16,
+                  9
+                ],
+                "duration_millis": 446633,
+                "variants": [
+                  {
+                    "content_type": "application/x-mpegURL",
+                    "url": "https://video.twimg.com/amplify_video/2042532719704326144/pl/mrv2_bH1sUy2HzB8.m3u8?tag=21&v=850"
+                  },
+                  {
+                    "bitrate": 256000,
+                    "content_type": "video/mp4",
+                    "url": "https://video.twimg.com/amplify_video/2042532719704326144/vid/avc1/480x270/BjFqX30iAFsQjNBd.mp4?tag=21"
+                  },
+                  {
+                    "bitrate": 832000,
+                    "content_type": "video/mp4",
+                    "url": "https://video.twimg.com/amplify_video/2042532719704326144/vid/avc1/640x360/oaEKjoLSL8Q4iYAD.mp4?tag=21"
+                  },
+                  {
+                    "bitrate": 2176000,
+                    "content_type": "video/mp4",
+                    "url": "https://video.twimg.com/amplify_video/2042532719704326144/vid/avc1/1280x720/lG_Ts0DzJWnICxbd.mp4?tag=21"
+                  },
+                  {
+                    "bitrate": 10368000,
+                    "content_type": "video/mp4",
+                    "url": "https://video.twimg.com/amplify_video/2042532719704326144/vid/avc1/1920x1080/B36TLMGK3Qa34hgF.mp4?tag=21"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "favorite_count": 0,
+        "favorited": false,
+        "full_text": "RT @kenw_2: Kevin Spacey 凯文•史派西的英语一直有一种独特的魔力，让人会忍不住想要听下去，不管是在影视里还是现实中。 https://t.co/J7PzunBQCh",
+        "id_str": "2042611756313571802",
+        "is_quote_status": false,
+        "lang": "zh",
+        "possibly_sensitive": false,
+        "possibly_sensitive_editable": true,
+        "quote_count": 0,
+        "reply_count": 0,
+        "retweet_count": 255,
+        "retweeted": false,
+        "retweeted_status_result": {
+          "result": {
+            "__typename": "Tweet",
+            "core": {
+              "user_results": {
+                "result": {
+                  "__typename": "User",
+                  "affiliates_highlighted_label": {},
+                  "avatar": {
+                    "image_url": "https://pbs.twimg.com/profile_images/1944368718231801856/MThgS-Qy_normal.jpg"
+                  },
+                  "core": {
+                    "created_at": "Thu Apr 30 13:22:37 +0000 2009",
+                    "name": "Ken W",
+                    "screen_name": "kenw_2"
+                  },
+                  "dm_permissions": {
+                    "can_dm": true
+                  },
+                  "follow_request_sent": false,
+                  "has_graduated_access": true,
+                  "id": "VXNlcjozNjY1OTk5MQ==",
+                  "is_blue_verified": true,
+                  "legacy": {
+                    "default_profile": true,
+                    "default_profile_image": false,
+                    "description": "An old friend, stay curious, stay human.",
+                    "entities": {
+                      "description": {
+                        "urls": []
+                      }
+                    },
+                    "fast_followers_count": 0,
+                    "favourites_count": 2583,
+                    "follow_request_sent": false,
+                    "followers_count": 169651,
+                    "friends_count": 466,
+                    "has_custom_timelines": true,
+                    "is_translator": false,
+                    "listed_count": 566,
+                    "media_count": 1868,
+                    "normal_followers_count": 169651,
+                    "notifications": false,
+                    "pinned_tweet_ids_str": [],
+                    "possibly_sensitive": false,
+                    "profile_banner_url": "https://pbs.twimg.com/profile_banners/36659991/1752408613",
+                    "profile_interstitial_type": "",
+                    "statuses_count": 6773,
+                    "translator_type": "none",
+                    "want_retweets": false,
+                    "withheld_in_countries": []
+                  },
+                  "location": {
+                    "location": "The Earth"
+                  },
+                  "media_permissions": {
+                    "can_media_tag": true
+                  },
+                  "parody_commentary_fan_label": "None",
+                  "privacy": {
+                    "protected": false
+                  },
+                  "profile_bio": {
+                    "description": "An old friend, stay curious, stay human."
+                  },
+                  "profile_description_language": "en",
+                  "profile_image_shape": "Circle",
+                  "relationship_perspectives": {
+                    "blocked_by": false,
+                    "blocking": false,
+                    "followed_by": false,
+                    "following": false,
+                    "muting": false
+                  },
+                  "rest_id": "36659991",
+                  "super_follow_eligible": false,
+                  "super_followed_by": false,
+                  "super_following": false,
+                  "tipjar_settings": {
+                    "is_enabled": false
+                  },
+                  "verification": {
+                    "verified": false
+                  }
+                }
+              }
+            },
+            "edit_control": {
+              "edit_tweet_ids": [
+                "2042532879326998962"
+              ],
+              "editable_until_msecs": "1775816361000",
+              "edits_remaining": "5",
+              "is_edit_eligible": true
+            },
+            "grok_analysis_button": true,
+            "is_translatable": true,
+            "legacy": {
+              "bookmark_count": 1118,
+              "bookmarked": false,
+              "conversation_id_str": "2042532879326998962",
+              "created_at": "Fri Apr 10 09:19:21 +0000 2026",
+              "display_text_range": [
+                0,
+                58
+              ],
+              "entities": {
+                "hashtags": [],
+                "media": [
+                  {
+                    "additional_media_info": {
+                      "monetizable": true
+                    },
+                    "allow_download_status": {
+                      "allow_download": true
+                    },
+                    "display_url": "pic.x.com/J7PzunBQCh",
+                    "expanded_url": "https://x.com/kenw_2/status/2042532879326998962/video/1",
+                    "ext_media_availability": {
+                      "status": "Available"
+                    },
+                    "id_str": "2042532719704326144",
+                    "indices": [
+                      59,
+                      82
+                    ],
+                    "media_key": "13_2042532719704326144",
+                    "media_results": {
+                      "result": {
+                        "media_key": "13_2042532719704326144"
+                      }
+                    },
+                    "media_url_https": "https://pbs.twimg.com/amplify_video_thumb/2042532719704326144/img/voaBfutXU7oWIITz.jpg",
+                    "original_info": {
+                      "focus_rects": [],
+                      "height": 1080,
+                      "width": 1920
+                    },
+                    "sizes": {
+                      "large": {
+                        "h": 1080,
+                        "resize": "fit",
+                        "w": 1920
+                      },
+                      "medium": {
+                        "h": 675,
+                        "resize": "fit",
+                        "w": 1200
+                      },
+                      "small": {
+                        "h": 383,
+                        "resize": "fit",
+                        "w": 680
+                      },
+                      "thumb": {
+                        "h": 150,
+                        "resize": "crop",
+                        "w": 150
+                      }
+                    },
+                    "type": "video",
+                    "url": "https://t.co/J7PzunBQCh",
+                    "video_info": {
+                      "aspect_ratio": [
+                        16,
+                        9
+                      ],
+                      "duration_millis": 446633,
+                      "variants": [
+                        {
+                          "content_type": "application/x-mpegURL",
+                          "url": "https://video.twimg.com/amplify_video/2042532719704326144/pl/mrv2_bH1sUy2HzB8.m3u8?tag=21&v=850"
+                        },
+                        {
+                          "bitrate": 256000,
+                          "content_type": "video/mp4",
+                          "url": "https://video.twimg.com/amplify_video/2042532719704326144/vid/avc1/480x270/BjFqX30iAFsQjNBd.mp4?tag=21"
+                        },
+                        {
+                          "bitrate": 832000,
+                          "content_type": "video/mp4",
+                          "url": "https://video.twimg.com/amplify_video/2042532719704326144/vid/avc1/640x360/oaEKjoLSL8Q4iYAD.mp4?tag=21"
+                        },
+                        {
+                          "bitrate": 2176000,
+                          "content_type": "video/mp4",
+                          "url": "https://video.twimg.com/amplify_video/2042532719704326144/vid/avc1/1280x720/lG_Ts0DzJWnICxbd.mp4?tag=21"
+                        },
+                        {
+                          "bitrate": 10368000,
+                          "content_type": "video/mp4",
+                          "url": "https://video.twimg.com/amplify_video/2042532719704326144/vid/avc1/1920x1080/B36TLMGK3Qa34hgF.mp4?tag=21"
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "symbols": [],
+                "timestamps": [],
+                "urls": [],
+                "user_mentions": []
+              },
+              "extended_entities": {
+                "media": [
+                  {
+                    "additional_media_info": {
+                      "monetizable": true
+                    },
+                    "allow_download_status": {
+                      "allow_download": true
+                    },
+                    "display_url": "pic.x.com/J7PzunBQCh",
+                    "expanded_url": "https://x.com/kenw_2/status/2042532879326998962/video/1",
+                    "ext_media_availability": {
+                      "status": "Available"
+                    },
+                    "id_str": "2042532719704326144",
+                    "indices": [
+                      59,
+                      82
+                    ],
+                    "media_key": "13_2042532719704326144",
+                    "media_results": {
+                      "result": {
+                        "media_key": "13_2042532719704326144"
+                      }
+                    },
+                    "media_url_https": "https://pbs.twimg.com/amplify_video_thumb/2042532719704326144/img/voaBfutXU7oWIITz.jpg",
+                    "original_info": {
+                      "focus_rects": [],
+                      "height": 1080,
+                      "width": 1920
+                    },
+                    "sizes": {
+                      "large": {
+                        "h": 1080,
+                        "resize": "fit",
+                        "w": 1920
+                      },
+                      "medium": {
+                        "h": 675,
+                        "resize": "fit",
+                        "w": 1200
+                      },
+                      "small": {
+                        "h": 383,
+                        "resize": "fit",
+                        "w": 680
+                      },
+                      "thumb": {
+                        "h": 150,
+                        "resize": "crop",
+                        "w": 150
+                      }
+                    },
+                    "type": "video",
+                    "url": "https://t.co/J7PzunBQCh",
+                    "video_info": {
+                      "aspect_ratio": [
+                        16,
+                        9
+                      ],
+                      "duration_millis": 446633,
+                      "variants": [
+                        {
+                          "content_type": "application/x-mpegURL",
+                          "url": "https://video.twimg.com/amplify_video/2042532719704326144/pl/mrv2_bH1sUy2HzB8.m3u8?tag=21&v=850"
+                        },
+                        {
+                          "bitrate": 256000,
+                          "content_type": "video/mp4",
+                          "url": "https://video.twimg.com/amplify_video/2042532719704326144/vid/avc1/480x270/BjFqX30iAFsQjNBd.mp4?tag=21"
+                        },
+                        {
+                          "bitrate": 832000,
+                          "content_type": "video/mp4",
+                          "url": "https://video.twimg.com/amplify_video/2042532719704326144/vid/avc1/640x360/oaEKjoLSL8Q4iYAD.mp4?tag=21"
+                        },
+                        {
+                          "bitrate": 2176000,
+                          "content_type": "video/mp4",
+                          "url": "https://video.twimg.com/amplify_video/2042532719704326144/vid/avc1/1280x720/lG_Ts0DzJWnICxbd.mp4?tag=21"
+                        },
+                        {
+                          "bitrate": 10368000,
+                          "content_type": "video/mp4",
+                          "url": "https://video.twimg.com/amplify_video/2042532719704326144/vid/avc1/1920x1080/B36TLMGK3Qa34hgF.mp4?tag=21"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "favorite_count": 1160,
+              "favorited": false,
+              "full_text": "Kevin Spacey 凯文•史派西的英语一直有一种独特的魔力，让人会忍不住想要听下去，不管是在影视里还是现实中。 https://t.co/J7PzunBQCh",
+              "id_str": "2042532879326998962",
+              "is_quote_status": false,
+              "lang": "zh",
+              "possibly_sensitive": false,
+              "possibly_sensitive_editable": true,
+              "quote_count": 11,
+              "reply_count": 79,
+              "retweet_count": 255,
+              "retweeted": false,
+              "user_id_str": "36659991"
+            },
+            "rest_id": "2042532879326998962",
+            "source": "<a href=\"http://twitter.com/download/iphone\" rel=\"nofollow\">Twitter for iPhone</a>",
+            "unmention_data": {},
+            "views": {
+              "count": "109241",
+              "state": "EnabledWithCount"
+            }
+          }
+        },
+        "user_id_str": "901670084657250304"
+      },
+      "rest_id": "2042611756313571802",
+      "source": "<a href=\"https://mobile.twitter.com\" rel=\"nofollow\">Twitter Web App</a>",
+      "unmention_data": {},
+      "views": {
+        "state": "Enabled"
+      }
+    }
+  },
+  {
+    "id": "2042470944006950936",
+    "text": "Not everything is good in Sweden. I say that often, and I mean it\n\nBut wow. Also:\n\nClean everywhere. Not fake clean - actually clean\n\nNature accessible to all, not just those who can afford it\n\nWorld class tech, music, defense, gaming and more\n\nYou can walk most places, including alone at night\n\nWell-kept architecture without being sterile\n\nPeople composed and respectful without being cold\n\nChildren raised with real freedom and independence early\n\nWomen equal in the workplace, in the home, in public life, generations ahead of most of the world\n\nParental leave that actually works\n\nClass doesn't define you the way it does in the UK or France\n\nHigh trust, people help their neighbors and follow rules because they believe in the collective, not because they're forced to\n\nSilence and nature treated as something restorative, not uncomfortable\n\nYou can leave things the way you found them and expect others to do the same\n\n--\n\nWorth to remember and fight for",
+    "createdAt": "Fri Apr 10 05:13:14 +0000 2026",
+    "replyCount": 65,
+    "retweetCount": 64,
+    "likeCount": 914,
+    "conversationId": "2042470944006950936",
+    "author": {
+      "username": "FredrikHjelm4",
+      "name": "Fredrik Hjelm"
+    },
+    "authorId": "1091481568152117249",
+    "media": [
+      {
+        "type": "photo",
+        "url": "https://pbs.twimg.com/media/HFhQZfkW8AA38uB.jpg",
+        "width": 1536,
+        "height": 2048,
+        "previewUrl": "https://pbs.twimg.com/media/HFhQZfkW8AA38uB.jpg:small"
+      }
+    ],
+    "_raw": {
+      "__typename": "Tweet",
+      "core": {
+        "user_results": {
+          "result": {
+            "__typename": "User",
+            "affiliates_highlighted_label": {},
+            "avatar": {
+              "image_url": "https://pbs.twimg.com/profile_images/2029685872254124032/dxvAuf7n_normal.jpg"
+            },
+            "core": {
+              "created_at": "Fri Feb 01 23:40:59 +0000 2019",
+              "name": "Fredrik Hjelm",
+              "screen_name": "FredrikHjelm4"
+            },
+            "dm_permissions": {
+              "can_dm": true
+            },
+            "follow_request_sent": false,
+            "has_graduated_access": true,
+            "id": "VXNlcjoxMDkxNDgxNTY4MTUyMTE3MjQ5",
+            "is_blue_verified": true,
+            "legacy": {
+              "default_profile": true,
+              "default_profile_image": false,
+              "description": "Founder & CEO @voitechnology (€200m+ rev, profitable). Founder @Pitdotcom - AI prod team as a service\n\nWant Europe to win",
+              "entities": {
+                "description": {
+                  "urls": []
+                }
+              },
+              "fast_followers_count": 0,
+              "favourites_count": 3881,
+              "follow_request_sent": false,
+              "followers_count": 6131,
+              "friends_count": 715,
+              "has_custom_timelines": true,
+              "is_translator": false,
+              "listed_count": 27,
+              "media_count": 518,
+              "normal_followers_count": 6131,
+              "notifications": false,
+              "pinned_tweet_ids_str": [
+                "2040402909565784226"
+              ],
+              "possibly_sensitive": false,
+              "profile_banner_url": "https://pbs.twimg.com/profile_banners/1091481568152117249/1648422695",
+              "profile_interstitial_type": "",
+              "statuses_count": 2949,
+              "translator_type": "none",
+              "want_retweets": false,
+              "withheld_in_countries": []
+            },
+            "location": {
+              "location": "Stockholm"
+            },
+            "media_permissions": {
+              "can_media_tag": true
+            },
+            "parody_commentary_fan_label": "None",
+            "privacy": {
+              "protected": false
+            },
+            "professional": {
+              "category": [
+                {
+                  "icon_name": "IconBriefcaseStroke",
+                  "id": 713,
+                  "name": "Science & Technology"
+                }
+              ],
+              "professional_type": "Business",
+              "rest_id": "1620752887230996483"
+            },
+            "profile_bio": {
+              "description": "Founder & CEO @voitechnology (€200m+ rev, profitable). Founder @Pitdotcom - AI prod team as a service\n\nWant Europe to win"
+            },
+            "profile_description_language": "en",
+            "profile_image_shape": "Circle",
+            "relationship_perspectives": {
+              "blocked_by": false,
+              "blocking": false,
+              "followed_by": false,
+              "following": false,
+              "muting": false
+            },
+            "rest_id": "1091481568152117249",
+            "super_follow_eligible": false,
+            "super_followed_by": false,
+            "super_following": false,
+            "tipjar_settings": {},
+            "verification": {
+              "verified": false
+            }
+          }
+        }
+      },
+      "edit_control": {
+        "edit_tweet_ids": [
+          "2042470944006950936"
+        ],
+        "editable_until_msecs": "1775801594000",
+        "edits_remaining": "5",
+        "is_edit_eligible": true
+      },
+      "grok_analysis_button": true,
+      "is_translatable": false,
+      "legacy": {
+        "bookmark_count": 53,
+        "bookmarked": false,
+        "conversation_id_str": "2042470944006950936",
+        "created_at": "Fri Apr 10 05:13:14 +0000 2026",
+        "display_text_range": [
+          0,
+          280
+        ],
+        "entities": {
+          "hashtags": [],
+          "media": [
+            {
+              "display_url": "pic.x.com/u3OAwtZuEo",
+              "expanded_url": "https://x.com/FredrikHjelm4/status/2042470944006950936/photo/1",
+              "ext_media_availability": {
+                "status": "Available"
+              },
+              "features": {
+                "large": {
+                  "faces": []
+                },
+                "medium": {
+                  "faces": []
+                },
+                "orig": {
+                  "faces": []
+                },
+                "small": {
+                  "faces": []
+                }
+              },
+              "id_str": "2042470829913468928",
+              "indices": [
+                281,
+                304
+              ],
+              "media_key": "3_2042470829913468928",
+              "media_results": {
+                "result": {
+                  "media_key": "3_2042470829913468928"
+                }
+              },
+              "media_url_https": "https://pbs.twimg.com/media/HFhQZfkW8AA38uB.jpg",
+              "original_info": {
+                "focus_rects": [
+                  {
+                    "h": 1720,
+                    "w": 3072,
+                    "x": 0,
+                    "y": 1495
+                  },
+                  {
+                    "h": 3072,
+                    "w": 3072,
+                    "x": 0,
+                    "y": 819
+                  },
+                  {
+                    "h": 3502,
+                    "w": 3072,
+                    "x": 0,
+                    "y": 594
+                  },
+                  {
+                    "h": 4096,
+                    "w": 2048,
+                    "x": 512,
+                    "y": 0
+                  },
+                  {
+                    "h": 4096,
+                    "w": 3072,
+                    "x": 0,
+                    "y": 0
+                  }
+                ],
+                "height": 4096,
+                "width": 3072
+              },
+              "sizes": {
+                "large": {
+                  "h": 2048,
+                  "resize": "fit",
+                  "w": 1536
+                },
+                "medium": {
+                  "h": 1200,
+                  "resize": "fit",
+                  "w": 900
+                },
+                "small": {
+                  "h": 680,
+                  "resize": "fit",
+                  "w": 510
+                },
+                "thumb": {
+                  "h": 150,
+                  "resize": "crop",
+                  "w": 150
+                }
+              },
+              "type": "photo",
+              "url": "https://t.co/u3OAwtZuEo"
+            }
+          ],
+          "symbols": [],
+          "timestamps": [],
+          "urls": [],
+          "user_mentions": []
+        },
+        "extended_entities": {
+          "media": [
+            {
+              "display_url": "pic.x.com/u3OAwtZuEo",
+              "expanded_url": "https://x.com/FredrikHjelm4/status/2042470944006950936/photo/1",
+              "ext_media_availability": {
+                "status": "Available"
+              },
+              "features": {
+                "large": {
+                  "faces": []
+                },
+                "medium": {
+                  "faces": []
+                },
+                "orig": {
+                  "faces": []
+                },
+                "small": {
+                  "faces": []
+                }
+              },
+              "id_str": "2042470829913468928",
+              "indices": [
+                281,
+                304
+              ],
+              "media_key": "3_2042470829913468928",
+              "media_results": {
+                "result": {
+                  "media_key": "3_2042470829913468928"
+                }
+              },
+              "media_url_https": "https://pbs.twimg.com/media/HFhQZfkW8AA38uB.jpg",
+              "original_info": {
+                "focus_rects": [
+                  {
+                    "h": 1720,
+                    "w": 3072,
+                    "x": 0,
+                    "y": 1495
+                  },
+                  {
+                    "h": 3072,
+                    "w": 3072,
+                    "x": 0,
+                    "y": 819
+                  },
+                  {
+                    "h": 3502,
+                    "w": 3072,
+                    "x": 0,
+                    "y": 594
+                  },
+                  {
+                    "h": 4096,
+                    "w": 2048,
+                    "x": 512,
+                    "y": 0
+                  },
+                  {
+                    "h": 4096,
+                    "w": 3072,
+                    "x": 0,
+                    "y": 0
+                  }
+                ],
+                "height": 4096,
+                "width": 3072
+              },
+              "sizes": {
+                "large": {
+                  "h": 2048,
+                  "resize": "fit",
+                  "w": 1536
+                },
+                "medium": {
+                  "h": 1200,
+                  "resize": "fit",
+                  "w": 900
+                },
+                "small": {
+                  "h": 680,
+                  "resize": "fit",
+                  "w": 510
+                },
+                "thumb": {
+                  "h": 150,
+                  "resize": "crop",
+                  "w": 150
+                }
+              },
+              "type": "photo",
+              "url": "https://t.co/u3OAwtZuEo"
+            }
+          ]
+        },
+        "favorite_count": 914,
+        "favorited": false,
+        "full_text": "Not everything is good in Sweden. I say that often, and I mean it\n\nBut wow. Also:\n\nClean everywhere. Not fake clean - actually clean\n\nNature accessible to all, not just those who can afford it\n\nWorld class tech, music, defense, gaming and more\n\nYou can walk most places, including https://t.co/u3OAwtZuEo",
+        "id_str": "2042470944006950936",
+        "is_quote_status": false,
+        "lang": "en",
+        "possibly_sensitive": false,
+        "possibly_sensitive_editable": true,
+        "quote_count": 9,
+        "reply_count": 65,
+        "retweet_count": 64,
+        "retweeted": false,
+        "user_id_str": "1091481568152117249"
+      },
+      "note_tweet": {
+        "is_expandable": true,
+        "note_tweet_results": {
+          "result": {
+            "entity_set": {
+              "hashtags": [],
+              "symbols": [],
+              "urls": [],
+              "user_mentions": []
+            },
+            "id": "Tm90ZVR3ZWV0OjIwNDI0NzA5NDM4ODUyODMzMjg=",
+            "media": {
+              "inline_media": []
+            },
+            "richtext": {
+              "richtext_tags": []
+            },
+            "text": "Not everything is good in Sweden. I say that often, and I mean it\n\nBut wow. Also:\n\nClean everywhere. Not fake clean - actually clean\n\nNature accessible to all, not just those who can afford it\n\nWorld class tech, music, defense, gaming and more\n\nYou can walk most places, including alone at night\n\nWell-kept architecture without being sterile\n\nPeople composed and respectful without being cold\n\nChildren raised with real freedom and independence early\n\nWomen equal in the workplace, in the home, in public life, generations ahead of most of the world\n\nParental leave that actually works\n\nClass doesn't define you the way it does in the UK or France\n\nHigh trust, people help their neighbors and follow rules because they believe in the collective, not because they're forced to\n\nSilence and nature treated as something restorative, not uncomfortable\n\nYou can leave things the way you found them and expect others to do the same\n\n--\n\nWorth to remember and fight for"
+          }
+        }
+      },
+      "rest_id": "2042470944006950936",
+      "source": "<a href=\"https://mobile.twitter.com\" rel=\"nofollow\">Twitter Web App</a>",
+      "unmention_data": {},
+      "views": {
+        "count": "29369",
+        "state": "EnabledWithCount"
+      }
+    }
+  },
+  {
+    "id": "2042348111809691858",
+    "text": "Tesla driving itself around LA https://t.co/NyM36R6J7a",
+    "createdAt": "Thu Apr 09 21:05:09 +0000 2026",
+    "replyCount": 9688,
+    "retweetCount": 22609,
+    "likeCount": 272480,
+    "conversationId": "2042348111809691858",
+    "author": {
+      "username": "elonmusk",
+      "name": "Elon Musk"
+    },
+    "authorId": "44196397",
+    "media": [
+      {
+        "type": "video",
+        "url": "https://pbs.twimg.com/amplify_video_thumb/2041748114709868547/img/SyKYO9xogrsCeSqu.jpg",
+        "width": 2048,
+        "height": 1152,
+        "previewUrl": "https://pbs.twimg.com/amplify_video_thumb/2041748114709868547/img/SyKYO9xogrsCeSqu.jpg:small",
+        "videoUrl": "https://video.twimg.com/amplify_video/2041748114709868547/vid/avc1/3840x2160/0k6eQBwdqqzAY86u.mp4?tag=21",
+        "durationMs": 254100
+      }
+    ],
+    "_raw": {
+      "__typename": "Tweet",
+      "core": {
+        "user_results": {
+          "result": {
+            "__typename": "User",
+            "affiliates_highlighted_label": {
+              "label": {
+                "badge": {
+                  "url": "https://pbs.twimg.com/profile_images/1955359038532653056/OSHY3ewP_bigger.jpg"
+                },
+                "description": "X",
+                "url": {
+                  "url": "https://twitter.com/X",
+                  "urlType": "DeepLink"
+                },
+                "userLabelDisplayType": "Badge",
+                "userLabelType": "BusinessLabel"
+              }
+            },
+            "avatar": {
+              "image_url": "https://pbs.twimg.com/profile_images/2035314704307081216/71U1ftM3_normal.jpg"
+            },
+            "core": {
+              "created_at": "Tue Jun 02 20:12:29 +0000 2009",
+              "name": "Elon Musk",
+              "screen_name": "elonmusk"
+            },
+            "dm_permissions": {
+              "can_dm": false
+            },
+            "follow_request_sent": false,
+            "has_graduated_access": true,
+            "id": "VXNlcjo0NDE5NjM5Nw==",
+            "is_blue_verified": true,
+            "legacy": {
+              "default_profile": false,
+              "default_profile_image": false,
+              "description": "https://t.co/dDtDyVssfm",
+              "entities": {
+                "description": {
+                  "urls": [
+                    {
+                      "display_url": "Terafab.ai",
+                      "expanded_url": "http://Terafab.ai",
+                      "indices": [
+                        0,
+                        23
+                      ],
+                      "url": "https://t.co/dDtDyVssfm"
+                    }
+                  ]
+                }
+              },
+              "fast_followers_count": 0,
+              "favourites_count": 221775,
+              "follow_request_sent": false,
+              "followers_count": 237760393,
+              "friends_count": 1311,
+              "has_custom_timelines": true,
+              "is_translator": false,
+              "listed_count": 167776,
+              "media_count": 4442,
+              "normal_followers_count": 237760393,
+              "notifications": false,
+              "pinned_tweet_ids_str": [
+                "2041754402239975479"
+              ],
+              "possibly_sensitive": false,
+              "profile_banner_url": "https://pbs.twimg.com/profile_banners/44196397/1774145451",
+              "profile_interstitial_type": "",
+              "statuses_count": 100947,
+              "translator_type": "none",
+              "want_retweets": true,
+              "withheld_in_countries": []
+            },
+            "location": {
+              "location": ""
+            },
+            "media_permissions": {
+              "can_media_tag": false
+            },
+            "parody_commentary_fan_label": "None",
+            "privacy": {
+              "protected": false
+            },
+            "professional": {
+              "category": [],
+              "professional_type": "Creator",
+              "rest_id": "1679729435447275522"
+            },
+            "profile_bio": {
+              "description": "https://t.co/dDtDyVssfm"
+            },
+            "profile_image_shape": "Circle",
+            "relationship_perspectives": {
+              "blocked_by": false,
+              "blocking": false,
+              "followed_by": false,
+              "following": true,
+              "muting": false
+            },
+            "rest_id": "44196397",
+            "super_follow_eligible": true,
+            "super_followed_by": false,
+            "super_following": false,
+            "tipjar_settings": {
+              "is_enabled": false
+            },
+            "verification": {
+              "verified": false
+            }
+          }
+        }
+      },
+      "edit_control": {
+        "edit_tweet_ids": [
+          "2042348111809691858"
+        ],
+        "editable_until_msecs": "1775772309000",
+        "edits_remaining": "5",
+        "is_edit_eligible": true
+      },
+      "grok_analysis_button": true,
+      "is_translatable": false,
+      "legacy": {
+        "bookmark_count": 18527,
+        "bookmarked": false,
+        "conversation_id_str": "2042348111809691858",
+        "created_at": "Thu Apr 09 21:05:09 +0000 2026",
+        "display_text_range": [
+          0,
+          54
+        ],
+        "entities": {
+          "hashtags": [],
+          "media": [
+            {
+              "additional_media_info": {
+                "call_to_actions": {
+                  "watch_now": {
+                    "url": "https://youtu.be/JcBj56LdW9g"
+                  }
+                },
+                "description": "Tesla Self-Driving 14.3 takes me to to the Sunset Strip in Los Angeles, California ",
+                "embeddable": true,
+                "monetizable": true,
+                "source_user": {
+                  "user_results": {
+                    "result": {
+                      "__typename": "User",
+                      "affiliates_highlighted_label": {},
+                      "avatar": {
+                        "image_url": "https://pbs.twimg.com/profile_images/1593688242771017728/1Ocz0cvu_normal.jpg"
+                      },
+                      "core": {
+                        "created_at": "Thu May 21 15:26:16 +0000 2020",
+                        "name": "Whole Mars Catalog",
+                        "screen_name": "wholemars"
+                      },
+                      "dm_permissions": {
+                        "can_dm": true
+                      },
+                      "follow_request_sent": false,
+                      "has_graduated_access": true,
+                      "id": "VXNlcjoxMjYzNDkxMjQwMzM2NzY5MDI2",
+                      "is_blue_verified": true,
+                      "legacy": {
+                        "default_profile": true,
+                        "default_profile_image": false,
+                        "description": "🤖 🚗 🤖 🚕",
+                        "entities": {
+                          "description": {
+                            "urls": []
+                          },
+                          "url": {
+                            "urls": [
+                              {
+                                "display_url": "sponsor.wholemars.com",
+                                "expanded_url": "http://sponsor.wholemars.com",
+                                "indices": [
+                                  0,
+                                  23
+                                ],
+                                "url": "https://t.co/QmsKvMsFxC"
+                              }
+                            ]
+                          }
+                        },
+                        "fast_followers_count": 0,
+                        "favourites_count": 743529,
+                        "follow_request_sent": false,
+                        "followers_count": 890450,
+                        "friends_count": 29511,
+                        "has_custom_timelines": true,
+                        "is_translator": false,
+                        "listed_count": 3747,
+                        "media_count": 35621,
+                        "normal_followers_count": 890450,
+                        "notifications": false,
+                        "pinned_tweet_ids_str": [
+                          "2042370009511707028"
+                        ],
+                        "possibly_sensitive": false,
+                        "profile_banner_url": "https://pbs.twimg.com/profile_banners/1263491240336769026/1760733213",
+                        "profile_interstitial_type": "",
+                        "statuses_count": 381337,
+                        "translator_type": "none",
+                        "url": "https://t.co/QmsKvMsFxC",
+                        "want_retweets": false,
+                        "withheld_in_countries": []
+                      },
+                      "location": {
+                        "location": "San Francisco + Los Angeles"
+                      },
+                      "media_permissions": {
+                        "can_media_tag": false
+                      },
+                      "parody_commentary_fan_label": "None",
+                      "privacy": {
+                        "protected": false
+                      },
+                      "profile_bio": {
+                        "description": "🤖 🚗 🤖 🚕"
+                      },
+                      "profile_description_language": "art",
+                      "profile_image_shape": "Circle",
+                      "relationship_perspectives": {
+                        "blocked_by": false,
+                        "blocking": false,
+                        "followed_by": false,
+                        "following": false,
+                        "muting": false
+                      },
+                      "rest_id": "1263491240336769026",
+                      "super_follow_eligible": true,
+                      "super_followed_by": false,
+                      "super_following": false,
+                      "tipjar_settings": {
+                        "bitcoin_handle": "3AdiMFVvGGfaAytGGLE2sAmj2k9fZntFf2",
+                        "cash_app_handle": "wholemars",
+                        "gofundme_handle": "https://www.gofundme.com/f/legal-defense-against-aaron-greenspan",
+                        "is_enabled": true,
+                        "patreon_handle": "wholemars"
+                      },
+                      "verification": {
+                        "verified": false
+                      }
+                    }
+                  }
+                },
+                "title": "Tesla Self-Driving 14.3 Doesn't Waste Any Time"
+              },
+              "allow_download_status": {
+                "allow_download": false
+              },
+              "display_url": "pic.x.com/NyM36R6J7a",
+              "expanded_url": "https://x.com/wholemars/status/2041751061531390171/video/1",
+              "ext_media_availability": {
+                "status": "Available"
+              },
+              "id_str": "2041748114709868547",
+              "indices": [
+                31,
+                54
+              ],
+              "media_key": "13_2041748114709868547",
+              "media_results": {
+                "result": {
+                  "media_key": "13_2041748114709868547"
+                }
+              },
+              "media_url_https": "https://pbs.twimg.com/amplify_video_thumb/2041748114709868547/img/SyKYO9xogrsCeSqu.jpg",
+              "original_info": {
+                "focus_rects": [],
+                "height": 2160,
+                "width": 3840
+              },
+              "sizes": {
+                "large": {
+                  "h": 1152,
+                  "resize": "fit",
+                  "w": 2048
+                },
+                "medium": {
+                  "h": 675,
+                  "resize": "fit",
+                  "w": 1200
+                },
+                "small": {
+                  "h": 383,
+                  "resize": "fit",
+                  "w": 680
+                },
+                "thumb": {
+                  "h": 150,
+                  "resize": "crop",
+                  "w": 150
+                }
+              },
+              "source_status_id_str": "2041751061531390171",
+              "source_user_id_str": "1263491240336769026",
+              "type": "video",
+              "url": "https://t.co/NyM36R6J7a",
+              "video_info": {
+                "aspect_ratio": [
+                  16,
+                  9
+                ],
+                "duration_millis": 254100,
+                "variants": [
+                  {
+                    "content_type": "application/x-mpegURL",
+                    "url": "https://video.twimg.com/amplify_video/2041748114709868547/pl/g3WzyaxoqyN_12Tt.m3u8?tag=21&v=cfc"
+                  },
+                  {
+                    "bitrate": 256000,
+                    "content_type": "video/mp4",
+                    "url": "https://video.twimg.com/amplify_video/2041748114709868547/vid/avc1/480x270/GsE9VfZfRQtv4aWV.mp4?tag=21"
+                  },
+                  {
+                    "bitrate": 832000,
+                    "content_type": "video/mp4",
+                    "url": "https://video.twimg.com/amplify_video/2041748114709868547/vid/avc1/640x360/OWEDAOLEVrrIcJze.mp4?tag=21"
+                  },
+                  {
+                    "bitrate": 2176000,
+                    "content_type": "video/mp4",
+                    "url": "https://video.twimg.com/amplify_video/2041748114709868547/vid/avc1/1280x720/XMyCuXOHtLo15owa.mp4?tag=21"
+                  },
+                  {
+                    "bitrate": 10368000,
+                    "content_type": "video/mp4",
+                    "url": "https://video.twimg.com/amplify_video/2041748114709868547/vid/avc1/1920x1080/yFumQ4Svr5_Uce0i.mp4?tag=21"
+                  },
+                  {
+                    "bitrate": 25128000,
+                    "content_type": "video/mp4",
+                    "url": "https://video.twimg.com/amplify_video/2041748114709868547/vid/avc1/3840x2160/0k6eQBwdqqzAY86u.mp4?tag=21"
+                  }
+                ]
+              }
+            }
+          ],
+          "symbols": [],
+          "timestamps": [],
+          "urls": [],
+          "user_mentions": []
+        },
+        "extended_entities": {
+          "media": [
+            {
+              "additional_media_info": {
+                "call_to_actions": {
+                  "watch_now": {
+                    "url": "https://youtu.be/JcBj56LdW9g"
+                  }
+                },
+                "description": "Tesla Self-Driving 14.3 takes me to to the Sunset Strip in Los Angeles, California ",
+                "embeddable": true,
+                "monetizable": true,
+                "source_user": {
+                  "user_results": {
+                    "result": {
+                      "__typename": "User",
+                      "affiliates_highlighted_label": {},
+                      "avatar": {
+                        "image_url": "https://pbs.twimg.com/profile_images/1593688242771017728/1Ocz0cvu_normal.jpg"
+                      },
+                      "core": {
+                        "created_at": "Thu May 21 15:26:16 +0000 2020",
+                        "name": "Whole Mars Catalog",
+                        "screen_name": "wholemars"
+                      },
+                      "dm_permissions": {
+                        "can_dm": true
+                      },
+                      "follow_request_sent": false,
+                      "has_graduated_access": true,
+                      "id": "VXNlcjoxMjYzNDkxMjQwMzM2NzY5MDI2",
+                      "is_blue_verified": true,
+                      "legacy": {
+                        "default_profile": true,
+                        "default_profile_image": false,
+                        "description": "🤖 🚗 🤖 🚕",
+                        "entities": {
+                          "description": {
+                            "urls": []
+                          },
+                          "url": {
+                            "urls": [
+                              {
+                                "display_url": "sponsor.wholemars.com",
+                                "expanded_url": "http://sponsor.wholemars.com",
+                                "indices": [
+                                  0,
+                                  23
+                                ],
+                                "url": "https://t.co/QmsKvMsFxC"
+                              }
+                            ]
+                          }
+                        },
+                        "fast_followers_count": 0,
+                        "favourites_count": 743529,
+                        "follow_request_sent": false,
+                        "followers_count": 890450,
+                        "friends_count": 29511,
+                        "has_custom_timelines": true,
+                        "is_translator": false,
+                        "listed_count": 3747,
+                        "media_count": 35621,
+                        "normal_followers_count": 890450,
+                        "notifications": false,
+                        "pinned_tweet_ids_str": [
+                          "2042370009511707028"
+                        ],
+                        "possibly_sensitive": false,
+                        "profile_banner_url": "https://pbs.twimg.com/profile_banners/1263491240336769026/1760733213",
+                        "profile_interstitial_type": "",
+                        "statuses_count": 381337,
+                        "translator_type": "none",
+                        "url": "https://t.co/QmsKvMsFxC",
+                        "want_retweets": false,
+                        "withheld_in_countries": []
+                      },
+                      "location": {
+                        "location": "San Francisco + Los Angeles"
+                      },
+                      "media_permissions": {
+                        "can_media_tag": false
+                      },
+                      "parody_commentary_fan_label": "None",
+                      "privacy": {
+                        "protected": false
+                      },
+                      "profile_bio": {
+                        "description": "🤖 🚗 🤖 🚕"
+                      },
+                      "profile_description_language": "art",
+                      "profile_image_shape": "Circle",
+                      "relationship_perspectives": {
+                        "blocked_by": false,
+                        "blocking": false,
+                        "followed_by": false,
+                        "following": false,
+                        "muting": false
+                      },
+                      "rest_id": "1263491240336769026",
+                      "super_follow_eligible": true,
+                      "super_followed_by": false,
+                      "super_following": false,
+                      "tipjar_settings": {
+                        "bitcoin_handle": "3AdiMFVvGGfaAytGGLE2sAmj2k9fZntFf2",
+                        "cash_app_handle": "wholemars",
+                        "gofundme_handle": "https://www.gofundme.com/f/legal-defense-against-aaron-greenspan",
+                        "is_enabled": true,
+                        "patreon_handle": "wholemars"
+                      },
+                      "verification": {
+                        "verified": false
+                      }
+                    }
+                  }
+                },
+                "title": "Tesla Self-Driving 14.3 Doesn't Waste Any Time"
+              },
+              "allow_download_status": {
+                "allow_download": false
+              },
+              "display_url": "pic.x.com/NyM36R6J7a",
+              "expanded_url": "https://x.com/wholemars/status/2041751061531390171/video/1",
+              "ext_media_availability": {
+                "status": "Available"
+              },
+              "id_str": "2041748114709868547",
+              "indices": [
+                31,
+                54
+              ],
+              "media_key": "13_2041748114709868547",
+              "media_results": {
+                "result": {
+                  "media_key": "13_2041748114709868547"
+                }
+              },
+              "media_url_https": "https://pbs.twimg.com/amplify_video_thumb/2041748114709868547/img/SyKYO9xogrsCeSqu.jpg",
+              "original_info": {
+                "focus_rects": [],
+                "height": 2160,
+                "width": 3840
+              },
+              "sizes": {
+                "large": {
+                  "h": 1152,
+                  "resize": "fit",
+                  "w": 2048
+                },
+                "medium": {
+                  "h": 675,
+                  "resize": "fit",
+                  "w": 1200
+                },
+                "small": {
+                  "h": 383,
+                  "resize": "fit",
+                  "w": 680
+                },
+                "thumb": {
+                  "h": 150,
+                  "resize": "crop",
+                  "w": 150
+                }
+              },
+              "source_status_id_str": "2041751061531390171",
+              "source_user_id_str": "1263491240336769026",
+              "type": "video",
+              "url": "https://t.co/NyM36R6J7a",
+              "video_info": {
+                "aspect_ratio": [
+                  16,
+                  9
+                ],
+                "duration_millis": 254100,
+                "variants": [
+                  {
+                    "content_type": "application/x-mpegURL",
+                    "url": "https://video.twimg.com/amplify_video/2041748114709868547/pl/g3WzyaxoqyN_12Tt.m3u8?tag=21&v=cfc"
+                  },
+                  {
+                    "bitrate": 256000,
+                    "content_type": "video/mp4",
+                    "url": "https://video.twimg.com/amplify_video/2041748114709868547/vid/avc1/480x270/GsE9VfZfRQtv4aWV.mp4?tag=21"
+                  },
+                  {
+                    "bitrate": 832000,
+                    "content_type": "video/mp4",
+                    "url": "https://video.twimg.com/amplify_video/2041748114709868547/vid/avc1/640x360/OWEDAOLEVrrIcJze.mp4?tag=21"
+                  },
+                  {
+                    "bitrate": 2176000,
+                    "content_type": "video/mp4",
+                    "url": "https://video.twimg.com/amplify_video/2041748114709868547/vid/avc1/1280x720/XMyCuXOHtLo15owa.mp4?tag=21"
+                  },
+                  {
+                    "bitrate": 10368000,
+                    "content_type": "video/mp4",
+                    "url": "https://video.twimg.com/amplify_video/2041748114709868547/vid/avc1/1920x1080/yFumQ4Svr5_Uce0i.mp4?tag=21"
+                  },
+                  {
+                    "bitrate": 25128000,
+                    "content_type": "video/mp4",
+                    "url": "https://video.twimg.com/amplify_video/2041748114709868547/vid/avc1/3840x2160/0k6eQBwdqqzAY86u.mp4?tag=21"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "favorite_count": 272480,
+        "favorited": false,
+        "full_text": "Tesla driving itself around LA https://t.co/NyM36R6J7a",
+        "id_str": "2042348111809691858",
+        "is_quote_status": false,
+        "lang": "en",
+        "possibly_sensitive": false,
+        "possibly_sensitive_editable": true,
+        "quote_count": 1669,
+        "reply_count": 9688,
+        "retweet_count": 22609,
+        "retweeted": false,
+        "user_id_str": "44196397"
+      },
+      "rest_id": "2042348111809691858",
+      "source": "<a href=\"http://twitter.com/download/iphone\" rel=\"nofollow\">Twitter for iPhone</a>",
+      "unmention_data": {},
+      "views": {
+        "count": "76490899",
+        "state": "EnabledWithCount"
+      }
+    }
+  }
+]
