@@ -8,7 +8,8 @@ A macOS menu bar app that filters your X (Twitter) For You feed for high-signal 
 
 - macOS 15+
 - [Claude Code](https://claude.ai/code) with active subscription
-- [bird](https://github.com/nicebyte/bird) CLI (`brew install steipete/tap/bird`)
+- [bird](https://github.com/steipete/bird) CLI (`brew install steipete/tap/bird`)
+- **Logged into X (Twitter) in Safari** -- bird uses Safari cookies to access your account
 
 ## Install
 
