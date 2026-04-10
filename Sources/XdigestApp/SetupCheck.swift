@@ -45,6 +45,59 @@ func checkSetup() -> [SetupIssue] {
     return issues
 }
 
+/// Checks if the firewall allows incoming connections to a given port.
+/// Call this after the server starts.
+func checkFirewallAccess(port: Int) -> SetupIssue? {
+    guard let lanIP = getLanIP() else { return nil }
+
+    let semaphore = DispatchSemaphore(value: 0)
+    var reachable = false
+
+    let url = URL(string: "http://\(lanIP):\(port)/api/mtime")!
+    var request = URLRequest(url: url)
+    request.timeoutInterval = 3
+
+    let task = URLSession.shared.dataTask(with: request) { data, response, _ in
+        if let http = response as? HTTPURLResponse, http.statusCode == 200 {
+            reachable = true
+        }
+        semaphore.signal()
+    }
+    task.resume()
+    semaphore.wait()
+
+    if !reachable {
+        return SetupIssue(
+            title: "Firewall is blocking Xdigest",
+            description: "Your iPhone and iPad can't connect to the reader. macOS blocked incoming connections for Xdigest.",
+            action: "Go to System Settings > Network > Firewall > Options, and set Xdigest to \"Allow incoming connections\"."
+        )
+    }
+    return nil
+}
+
+/// Returns the Mac's LAN IP address.
+private func getLanIP() -> String? {
+    var ifaddr: UnsafeMutablePointer<ifaddrs>?
+    guard getifaddrs(&ifaddr) == 0, let first = ifaddr else { return nil }
+    defer { freeifaddrs(ifaddr) }
+
+    for ptr in sequence(first: first, next: { $0.pointee.ifa_next }) {
+        let addr = ptr.pointee.ifa_addr.pointee
+        guard addr.sa_family == UInt8(AF_INET) else { continue }
+        let name = String(cString: ptr.pointee.ifa_name)
+        guard name == "en0" || name == "en1" else { continue }
+
+        var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+        if getnameinfo(ptr.pointee.ifa_addr, socklen_t(addr.sa_len),
+                       &hostname, socklen_t(hostname.count),
+                       nil, 0, NI_NUMERICHOST) == 0 {
+            return String(cString: hostname)
+        }
+    }
+    return nil
+}
+
 /// Quick check: can bird fetch at least one tweet?
 private func canBirdAccessX() -> Bool {
     guard let birdPath = findBird() else { return false }

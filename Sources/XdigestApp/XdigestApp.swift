@@ -126,7 +126,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let initialDigest = Pipeline.loadDigest() ?? Digest(date: "", sections: [])
         Task {
             do {
-                serverHandle = try await ServerService.startServer(
+                self.serverHandle = try await ServerService.startServer(
                     port: serverPort,
                     digest: initialDigest,
                     onGenerate: { [weak self] in
@@ -134,9 +134,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     }
                 )
                 self.log("[App] Server started on port \(serverPort)")
+                self.checkFirewall()
             } catch {
                 self.log("[App] Server failed: \(error)")
                 showNotification(title: "Xdigest Error", body: "Server: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    // MARK: - Firewall Check
+
+    private func checkFirewall() {
+        Task.detached {
+            if let issue = checkFirewallAccess(port: serverPort) {
+                await MainActor.run {
+                    NSApp.setActivationPolicy(.regular)
+                    self.setupWindow = showSetupWindow(issues: [issue]) { [weak self] in
+                        NSApp.setActivationPolicy(.accessory)
+                        self?.setupWindow = nil
+                    }
+                }
             }
         }
     }
