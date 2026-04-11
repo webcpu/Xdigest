@@ -10,6 +10,85 @@ private final class ResultBox: @unchecked Sendable {
     var result = GenerateResult(picks: 0, error: nil)
 }
 
+/// Runs one full generation cycle: read currentDigest, generate, write
+/// seen cache, update server digest. Extracted as a function so the
+/// ordering invariant is enforced by a function boundary rather than
+/// inline comments -- future edits can't silently reorder or skip a
+/// step without modifying this helper.
+///
+/// Partial failure: if `generate()` throws, nothing is persisted (the
+/// next run re-scores everything, which is the right thing). If
+/// `saveSeen` throws, we log and continue -- the generation is still
+/// valid, but the next run may re-pick some of these tweets until the
+/// disk write succeeds.
+private func runGenerationCycle(serverHandle: ServerHandle?) async throws -> GenerateOutcome {
+    // 1. Read currentDigest AFTER the predecessor's updateDigest has
+    //    committed, so our merge sees the latest state.
+    let currentDigest = serverHandle.map { ServerService.currentDigest($0) }
+
+    // 2. Run the expensive pipeline.
+    let outcome = try await generate(currentDigest: currentDigest)
+
+    // 3. Write seen cache BEFORE the next submission reads it. If the
+    //    disk write fails, log visibly -- silent failure here causes
+    //    duplicates in later digests.
+    do {
+        try saveSeen(outcome.seenIds)
+    } catch {
+        let line = "[App] [GenerationQueue] WARN saveSeen failed: \(error)\n"
+        FileHandle.standardError.write(Data(line.utf8))
+    }
+
+    // 4. Update server digest BEFORE the next submission reads
+    //    currentDigest. Without this, the next merge is based on stale
+    //    state and our contribution gets overwritten.
+    if let handle = serverHandle {
+        ServerService.updateDigest(handle, digest: outcome.digest)
+    }
+
+    return outcome
+}
+
+/// Serializes the full read-modify-write cycle of generation state so
+/// two generations never race on the seen cache or the server digest.
+/// Each call to `submit` chains behind the previous one (FIFO) and only
+/// completes after `runGenerationCycle` has fully committed all state.
+///
+/// This is "option 3": each submission runs its own generation, but
+/// they're strictly serialized. Two rapid calls pay 2x the API cost,
+/// and the second run picks up fresh data from X (posts that arrived
+/// during the first run).
+///
+/// Known limitation -- head-of-line blocking: a stuck `generate()`
+/// (network hang, slow scorer) silently blocks every later caller,
+/// including the HTTP `/api/generate` handler that sits on a semaphore.
+/// Add a timeout to `generate()` upstream if this becomes a problem.
+///
+/// Cancellation is NOT propagated. `Task.detached` intentionally breaks
+/// the parent-child link -- if a caller of `submit` is cancelled (e.g.
+/// app quit), the in-flight `generate()` keeps running until it returns
+/// or the process dies. This avoids half-written seen caches from
+/// mid-run cancellation.
+///
+/// Task.detached also keeps the cycle off the actor, so the actor is
+/// only held for the brief bookkeeping around submission.
+private actor GenerationQueue {
+    private var current: Task<GenerateOutcome, Error>?
+
+    func submit(serverHandle: ServerHandle?) async throws -> GenerateOutcome {
+        let previous = current
+        let task = Task.detached { () -> GenerateOutcome in
+            // Wait for the predecessor regardless of its success or
+            // failure. Each submission is independent, so a failed
+            // predecessor shouldn't block or poison the next run.
+            _ = await previous?.result
+            return try await runGenerationCycle(serverHandle: serverHandle)
+        }
+        current = task
+        return try await task.value
+    }
+}
+
 @main
 struct XdigestApp: App {
     @NSApplicationDelegateAdaptor private var appDelegate: AppDelegate
@@ -27,7 +106,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private var serverHandle: ServerHandle?
     private var setupWindow: NSWindow?
-    private var isGenerating = false
+
+    /// Counter of in-flight generations across all entry points (menu,
+    /// auto-open, HTTP /api/generate). Must be a counter, not a Bool,
+    /// because multiple paths can concurrently bump it and a single flag
+    /// would clobber: menu's end-of-generation would flip it false while
+    /// HTTP's generation is still running.
+    private var generatingCount = 0
+    private var isGenerating: Bool { generatingCount > 0 }
+
+    // Nonisolated because `runPipelineSync` (called from the HTTP handler
+    // thread) needs to reach it without hopping to MainActor. Actors are
+    // Sendable, so a `let` reference is safe to share across isolation.
+    nonisolated private let generationQueue = GenerationQueue()
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         // Single-instance policy: the latest launched instance wins. Any
@@ -164,17 +255,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// reader on success. Shared by the menu action and the auto-open flow.
     private func performGeneration(thenOpen: Bool) {
         guard !isGenerating else { return }
-        isGenerating = true
+        generatingCount += 1
         rebuildMenu()
 
         Task {
             do {
-                let currentDigest = serverHandle.map { ServerService.currentDigest($0) }
-                let outcome = try await generate(currentDigest: currentDigest)
-                try? saveSeen(outcome.seenIds)
-                if let handle = serverHandle {
-                    updateDigest(handle, digest: outcome.digest)
-                }
+                // The queue handles read-currentDigest, generate, save-seen,
+                // and update-digest atomically. Caller only does UI work.
+                let outcome = try await generationQueue.submit(serverHandle: serverHandle)
                 let picks = outcome.digest.sections.first?.posts.count ?? 0
                 showNotification(title: "Xdigest", body: "\(picks) new posts")
                 if thenOpen { openReader() }
@@ -183,7 +271,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 // the user needs to see what went wrong.
                 showNotification(title: "Xdigest Error", body: error.localizedDescription)
             }
-            isGenerating = false
+            generatingCount -= 1
             rebuildMenu()
         }
     }
@@ -283,21 +371,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Task.detached {
             self.log("[App] Pipeline task started")
             do {
-                // Read the current digest from the single writer (DigestState)
-                let currentDigest = await MainActor.run { () -> Digest? in
-                    guard let handle = self.serverHandle else { return nil }
-                    return ServerService.currentDigest(handle)
+                // Mark a generation as in-flight so the menu reflects
+                // HTTP-triggered runs, and grab the server handle to
+                // hand to the queue (it's Sendable).
+                let handle = await MainActor.run { () -> ServerHandle? in
+                    self.generatingCount += 1
+                    self.rebuildMenu()
+                    return self.serverHandle
                 }
-                let outcome = try await generate(currentDigest: currentDigest)
+                // The queue handles read-currentDigest, generate, save-seen,
+                // and update-digest atomically -- all gated on predecessor
+                // completion, so concurrent HTTP requests can't race.
+                let outcome = try await self.generationQueue.submit(serverHandle: handle)
                 let picks = outcome.digest.sections.first?.posts.count ?? 0
                 self.log("[App] Pipeline produced \(picks) posts")
-                // Persist seen cache (the digest persists via DigestState.onDigestChange)
-                try? saveSeen(outcome.seenIds)
                 await MainActor.run {
-                    if let handle = self.serverHandle {
-                        ServerService.updateDigest(handle, digest: outcome.digest)
-                    }
-                    self.isGenerating = false
+                    self.generatingCount -= 1
                     self.rebuildMenu()
                 }
                 box.result = GenerateResult(picks: picks)
@@ -305,7 +394,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self.log("[App] Pipeline error: \(error)")
                 box.result = GenerateResult(picks: 0, error: error.localizedDescription)
                 await MainActor.run {
-                    self.isGenerating = false
+                    self.generatingCount -= 1
                     self.rebuildMenu()
                 }
             }
