@@ -105,11 +105,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         guard let button = statusItem?.button else { return }
-        button.image = NSImage(
-            systemSymbolName: "doc.text.magnifyingglass",
-            accessibilityDescription: "Xdigest"
-        )
+        button.image = menuBarIcon()
         rebuildMenu()
+    }
+
+    /// "XD" wordmark rendered as a template image so macOS handles dark
+    /// mode, light mode, and tinted menu bar automatically.
+    private func menuBarIcon() -> NSImage {
+        let size = NSSize(width: 22, height: 22)
+        let image = NSImage(size: size, flipped: false) { rect in
+            let font = NSFont.systemFont(ofSize: 14, weight: .heavy)
+            let attrs: [NSAttributedString.Key: Any] = [
+                .font: font,
+                .foregroundColor: NSColor.black,
+            ]
+            let text = "XD" as NSString
+            let textSize = text.size(withAttributes: attrs)
+            let origin = NSPoint(
+                x: (rect.width - textSize.width) / 2,
+                y: (rect.height - textSize.height) / 2 - 1
+            )
+            text.draw(at: origin, withAttributes: attrs)
+            return true
+        }
+        image.isTemplate = true
+        image.accessibilityDescription = "Xdigest"
+        return image
     }
 
     private func rebuildMenu() {
