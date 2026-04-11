@@ -7,7 +7,7 @@ A macOS menu bar app that filters your X (Twitter) For You feed for high-signal 
 ## Requirements
 
 - macOS 15+
-- [Claude Code](https://claude.ai/code) with active subscription (not API key)
+- [Claude Code](https://code.claude.com/docs/en/setup) -- install it, then run `claude` and use `/login` to sign in with your subscription (not API key)
 - [bird](https://github.com/steipete/bird) CLI (`brew install steipete/tap/bird`)
 - **Logged into X (Twitter) in Safari, Chrome, or Firefox** -- bird reads browser cookies
 
@@ -38,19 +38,24 @@ Or build the DMG:
 
 ## Usage
 
-Launch Xdigest. A menu bar icon appears (magnifying glass). Click it:
+Launch Xdigest. The **XD** wordmark appears in your menu bar (template image, adapts to light/dark/tinted menu bar). Click it:
 
 - **Generate Digest** -- fetches your feed, scores with Claude, updates the reader
 - **Open Reader** -- opens `http://localhost:8408` in your browser
+- **Check for Updates...** -- queries GitHub for a newer release
 - **Quit**
 
-Or click the blue refresh button in the reader itself.
+Or click the refresh button in the reader. When new posts are generated, a blue "N new posts" banner appears at the top -- click to reveal them.
+
+**Launching Xdigest opens today's reader automatically.** If today's digest already has posts, the reader opens immediately. Otherwise Xdigest runs the pipeline first, then opens when done.
 
 ### Access from iPhone/iPad
 
 The reader is accessible from any device on the same network. Open Safari on your iPhone or iPad and go to `http://your-mac.local:8408`.
 
 On first launch, macOS will ask whether Xdigest can accept incoming connections. **Click Allow** -- otherwise iPhone/iPad can't reach the reader. If you click Deny by mistake, Xdigest detects this and shows a setup window with a link to fix it.
+
+**Reveal state is synced across devices**: when you click the "N new posts" banner on one device, the others catch up automatically. Section open/closed state is local for now.
 
 ## Architecture
 
@@ -68,6 +73,7 @@ BirdService -> ScorerService -> DigestService -> ServerService -> Browser
 - **DigestService** -- assembles scored posts into a digest with dedup
 - **ServerService** -- HTTP server with HTML reader and video proxy
 - **Pipeline** -- orchestrates the flow with retry and caching
+- **Updater** -- checks GitHub Releases for newer versions (reusable as a standalone SPM target)
 
 ## Features
 
@@ -77,7 +83,10 @@ BirdService -> ScorerService -> DigestService -> ServerService -> Browser
 - Repost detection (shows original author)
 - Video playback via local proxy (no CORS issues)
 - Foldable timestamp sections
-- Hot reload (polls for new posts)
+- Real-time cross-device sync via Server-Sent Events
+- Auto-open on launch -- goes straight to today's digest
+- Single-instance policy (latest launch wins)
+- Built-in update checker (notifies when a new release is available)
 - Responsive (works on Mac, iPhone, iPad)
 - Per-day digest files (scales to years of use)
 - Setup check on launch (guides users through missing requirements)
