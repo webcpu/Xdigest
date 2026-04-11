@@ -15,6 +15,9 @@ echo "Building release..."
 cd "$PROJECT_DIR"
 swift build -c release
 
+echo "Building app icon..."
+"$SCRIPT_DIR/make-icon.sh"
+
 echo "Creating app bundle..."
 rm -rf "$DIST_DIR"
 mkdir -p "$APP_BUNDLE/Contents/MacOS"
@@ -22,6 +25,9 @@ mkdir -p "$APP_BUNDLE/Contents/Resources"
 
 # Copy binary
 cp "$BUILD_DIR/$APP_NAME" "$APP_BUNDLE/Contents/MacOS/$APP_NAME"
+
+# Copy app icon
+cp "$PROJECT_DIR/Resources/Xdigest.icns" "$APP_BUNDLE/Contents/Resources/Xdigest.icns"
 
 # Create Info.plist
 cat > "$APP_BUNDLE/Contents/Info.plist" << PLIST
@@ -31,6 +37,8 @@ cat > "$APP_BUNDLE/Contents/Info.plist" << PLIST
 <dict>
     <key>CFBundleExecutable</key>
     <string>$APP_NAME</string>
+    <key>CFBundleIconFile</key>
+    <string>Xdigest</string>
     <key>CFBundleIdentifier</key>
     <string>$BUNDLE_ID</string>
     <key>CFBundleName</key>

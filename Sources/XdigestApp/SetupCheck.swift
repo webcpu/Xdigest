@@ -55,58 +55,70 @@ func checkSetup() -> [SetupIssue] {
     return issues
 }
 
-/// Checks if the firewall allows incoming connections to a given port.
-/// Call this after the server starts.
+/// Checks whether macOS has *explicitly* blocked incoming connections for
+/// this app. Returns nil in all other cases (allowed, or state unknown).
+///
+/// We ask macOS directly via `socketfilterfw --listapps`. A network probe
+/// is unreliable -- a failed HTTP request could be timing, network flake,
+/// or LAN resolution, not the firewall. Only when macOS explicitly reports
+/// "Block incoming connections" do we surface the warning.
 func checkFirewallAccess(port: Int) -> SetupIssue? {
-    guard let lanIP = getLanIP() else { return nil }
+    guard firewallIsEnabled() else { return nil }
+    guard let appPath = Bundle.main.executablePath ?? CommandLine.arguments.first else { return nil }
+    guard let state = firewallStateForApp(at: appPath) else { return nil }
+    guard state == .blocked else { return nil }
 
-    let semaphore = DispatchSemaphore(value: 0)
-    var reachable = false
+    return SetupIssue(
+        title: "Firewall is blocking Xdigest",
+        description: "macOS has blocked incoming connections for Xdigest. Your iPhone and iPad can't connect to the reader. Set Xdigest to \"Allow incoming connections\" in Firewall Options.",
+        action: "Open Firewall Settings",
+        actionUrl: "x-apple.systempreferences:com.apple.Network-Settings.extension?Firewall"
+    )
+}
 
-    let url = URL(string: "http://\(lanIP):\(port)/api/mtime")!
-    var request = URLRequest(url: url)
-    request.timeoutInterval = 3
+private enum FirewallAppState { case allowed, blocked }
 
-    let task = URLSession.shared.dataTask(with: request) { data, response, _ in
-        if let http = response as? HTTPURLResponse, http.statusCode == 200 {
-            reachable = true
-        }
-        semaphore.signal()
-    }
-    task.resume()
-    semaphore.wait()
+/// Is the macOS application firewall enabled at all?
+private func firewallIsEnabled() -> Bool {
+    let output = runSocketFilterFW(["--getglobalstate"]) ?? ""
+    // "Firewall is enabled. (State = 1)" or "Firewall is disabled."
+    return output.contains("enabled")
+}
 
-    if !reachable {
-        return SetupIssue(
-            title: "Firewall is blocking Xdigest",
-            description: "Your iPhone and iPad can't connect to the reader. macOS blocked incoming connections for Xdigest. Set Xdigest to \"Allow incoming connections\" in Firewall Options.",
-            action: "Open Firewall Settings",
-            actionUrl: "x-apple.systempreferences:com.apple.Network-Settings.extension?Firewall"
-        )
+/// Reads `socketfilterfw --listapps` and returns the firewall state for the
+/// given binary path, or nil if the app isn't listed.
+private func firewallStateForApp(at path: String) -> FirewallAppState? {
+    guard let output = runSocketFilterFW(["--listapps"]) else { return nil }
+    let lines = output.components(separatedBy: "\n")
+    for (i, line) in lines.enumerated() {
+        guard line.contains(path) else { continue }
+        // Next line describes the state: "(Allow incoming connections)" or "(Block incoming connections)"
+        let next = i + 1 < lines.count ? lines[i + 1] : ""
+        if next.contains("Allow") { return .allowed }
+        if next.contains("Block") { return .blocked }
+        return nil
     }
     return nil
 }
 
-/// Returns the Mac's LAN IP address.
-private func getLanIP() -> String? {
-    var ifaddr: UnsafeMutablePointer<ifaddrs>?
-    guard getifaddrs(&ifaddr) == 0, let first = ifaddr else { return nil }
-    defer { freeifaddrs(ifaddr) }
+/// Runs `socketfilterfw` with the given arguments. Returns stdout or nil on failure.
+private func runSocketFilterFW(_ args: [String]) -> String? {
+    let process = Process()
+    let pipe = Pipe()
+    process.executableURL = URL(fileURLWithPath: "/usr/libexec/ApplicationFirewall/socketfilterfw")
+    process.arguments = args
+    process.standardOutput = pipe
+    process.standardError = FileHandle.nullDevice
 
-    for ptr in sequence(first: first, next: { $0.pointee.ifa_next }) {
-        let addr = ptr.pointee.ifa_addr.pointee
-        guard addr.sa_family == UInt8(AF_INET) else { continue }
-        let name = String(cString: ptr.pointee.ifa_name)
-        guard name == "en0" || name == "en1" else { continue }
-
-        var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-        if getnameinfo(ptr.pointee.ifa_addr, socklen_t(addr.sa_len),
-                       &hostname, socklen_t(hostname.count),
-                       nil, 0, NI_NUMERICHOST) == 0 {
-            return String(cString: hostname)
-        }
+    do {
+        try process.run()
+        process.waitUntilExit()
+    } catch {
+        return nil
     }
-    return nil
+    guard process.terminationStatus == 0 else { return nil }
+    let data = pipe.fileHandleForReading.readDataToEndOfFile()
+    return String(data: data, encoding: .utf8)
 }
 
 /// Quick check: can bird fetch at least one tweet?

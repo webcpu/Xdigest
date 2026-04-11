@@ -138,10 +138,19 @@ public func renderDigest(_ digest: Digest) -> String {
 }
 
 /// Returns the complete reader HTML page with digest content embedded.
-public func readerPage(digestHTML: String, initialPosition: String = "") -> String {
+public func readerPage(
+    digestHTML: String,
+    initialPosition: String = "",
+    initialFraction: Double = 0,
+    initialVersion: Int = 0,
+    instanceId: String = ""
+) -> String {
     readerTemplate
         .replacingOccurrences(of: "<!--DIGEST_DATA-->", with: digestHTML)
         .replacingOccurrences(of: "<!--INITIAL_POSITION-->", with: escapeHTML(initialPosition))
+        .replacingOccurrences(of: "<!--INITIAL_FRACTION-->", with: "\(initialFraction)")
+        .replacingOccurrences(of: "<!--INITIAL_VERSION-->", with: "\(initialVersion)")
+        .replacingOccurrences(of: "<!--INSTANCE_ID-->", with: escapeHTML(instanceId))
 }
 
 // MARK: - Helpers

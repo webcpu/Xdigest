@@ -93,7 +93,7 @@ video { max-width: 100%; border-radius: 16px; margin-top: 12px; }
 img[style*="border-radius"]:not([width="32"]) { cursor: zoom-in; }
 </style>
 </head>
-<body data-initial-position="<!--INITIAL_POSITION-->">
+<body data-initial-position="<!--INITIAL_POSITION-->" data-initial-fraction="<!--INITIAL_FRACTION-->" data-initial-version="<!--INITIAL_VERSION-->" data-instance-id="<!--INSTANCE_ID-->">
 <div class="page-wrapper">
 <div id="app">
 <h1>xdigest</h1>
@@ -307,42 +307,125 @@ try { document.querySelectorAll('video').forEach(function(vid) {
 });
 } catch(e) { console.error('video error:', e); }
 
-// Cross-device sync state
+// Cross-device sync state (tmux-style: server owns state, client applies
+// strictly by version).
+var localVersion = -1;       // highest version we've applied from the server
 var serverMtime = 0;
 var serverPosition = '';
-var localPosition = '';
-var suppressScrollSync = false;
+var serverFraction = 0;      // the server's last-known fraction into serverPosition
+var knownInstanceId = '';    // server instance ID we loaded; reload if it changes
+var inProgrammaticScroll = 0;  // counter, handles overlapping programmatic scrolls
+var lastUserScrollTime = 0;
+var IDLE_MS = 3000;          // don't interrupt active reading within this window
 
-// Extract post IDs from a container, in order (top to bottom).
-function extractPostIds(container) {
+// Extract post IDs from the timeline, in document order.
+function extractPostIds() {
   var ids = [];
-  container.querySelectorAll('div[data-post-id]').forEach(function(post) {
-    ids.push(post.getAttribute('data-post-id'));
-  });
+  allPosts().forEach(function(post) { ids.push(postIdOf(post)); });
   return ids;
 }
 
-// Find the post ID at the top of the viewport.
-function findTopmostPostId() {
-  var posts = tl.querySelectorAll('div[data-post-id]');
-  for (var i = 0; i < posts.length; i++) {
-    var rect = posts[i].getBoundingClientRect();
-    if (rect.bottom > 0) {
-      return posts[i].getAttribute('data-post-id');
-    }
-  }
-  return '';
+// The "reading anchor": the y position in the viewport that represents
+// the top of the user's "reading area." Everything above is "scrolled past."
+var READING_ANCHOR = 60;
+
+// --- Small, single-purpose helpers (Unix-style) ---
+
+// Returns all post elements in document order.
+function allPosts() {
+  return tl.querySelectorAll('div[data-post-id]');
 }
 
-// Scroll to a specific post by ID.
-function scrollToPostId(postId) {
+// Looks up a single post element by ID.
+function postById(postId) {
+  return tl.querySelector('div[data-post-id="' + postId + '"]');
+}
+
+// Returns the post ID from a post element.
+function postIdOf(post) {
+  return post.getAttribute('data-post-id');
+}
+
+// Does the post's visible range span the reading anchor?
+function postContainsAnchor(rect) {
+  return rect.top <= READING_ANCHOR && rect.bottom > READING_ANCHOR;
+}
+
+// Clamps a number to [0, 1].
+function clamp01(x) {
+  if (x < 0) return 0;
+  if (x > 1) return 1;
+  return x;
+}
+
+// Fractional offset from a post's top to the reading anchor.
+function fractionAt(rect) {
+  var height = rect.height || 1;
+  return clamp01((READING_ANCHOR - rect.top) / height);
+}
+
+// Build an anchor object from a post element.
+function anchorForPost(post, fraction) {
+  return { postId: postIdOf(post), fraction: fraction };
+}
+
+// --- Main operations: findReadingAnchor and scrollToAnchor ---
+
+// Find the post containing the reading anchor, and the fraction (0..1)
+// from that post's top to the anchor.
+//
+// The `(postId, fraction)` pair is what transfers across devices: the
+// sequence of posts is stable, and the fractional offset within a post
+// is approximately stable under reflow. Together they reproduce the same
+// "reading position" on a different screen size -- like resizing a browser
+// window preserves the top of the visible content.
+function findReadingAnchor() {
+  var posts = allPosts();
+  var lastAbove = null;
+  for (var i = 0; i < posts.length; i++) {
+    var rect = posts[i].getBoundingClientRect();
+    if (postContainsAnchor(rect)) {
+      return anchorForPost(posts[i], fractionAt(rect));
+    }
+    if (rect.top > READING_ANCHOR) {
+      // The anchor falls in a gap above this post. Use this post's top.
+      return anchorForPost(posts[i], 0);
+    }
+    lastAbove = posts[i];
+  }
+  // All posts are above the anchor. Clamp to the last one's bottom.
+  if (lastAbove) {
+    return anchorForPost(lastAbove, 1);
+  }
+  return { postId: '', fraction: 0 };
+}
+
+// Computes the target scrollY that places `fraction` into `post` at the anchor.
+function targetScrollY(post, fraction) {
+  var y = post.offsetTop + (fraction || 0) * post.offsetHeight - READING_ANCHOR;
+  return Math.max(0, y);
+}
+
+// Wraps a programmatic scroll with the suppression counter so that the
+// resulting scroll events don't feed back into sendAnchor.
+function withSuppressedScrollSync(fn) {
+  inProgrammaticScroll++;
+  fn();
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      inProgrammaticScroll--;
+    });
+  });
+}
+
+// Scroll so that `fraction` into `postId` sits at the reading anchor.
+function scrollToAnchor(postId, fraction) {
   if (!postId) return;
-  var post = tl.querySelector('div[data-post-id="' + postId + '"]');
+  var post = postById(postId);
   if (!post) return;
-  suppressScrollSync = true;
-  var rect = post.getBoundingClientRect();
-  window.scrollTo(0, window.scrollY + rect.top - 60);
-  setTimeout(function() { suppressScrollSync = false; }, 300);
+  withSuppressedScrollSync(function() {
+    window.scrollTo(0, targetScrollY(post, fraction));
+  });
 }
 
 // Banner visibility: show if there are posts above lastSeenPostId.
@@ -351,7 +434,7 @@ function updateBanner() {
     banner.style.display = 'none';
     return;
   }
-  var postIds = extractPostIds(tl);
+  var postIds = extractPostIds();
   var idx = postIds.indexOf(serverPosition);
   if (idx > 0) {
     banner.textContent = idx + ' new post' + (idx > 1 ? 's' : '');
@@ -369,12 +452,27 @@ function updateBanner() {
 }
 
 // Replace the timeline DOM with fresh HTML from /api/digest.
+// Preserves the user's current scroll position -- they stay where they
+// were reading, and the banner tells them new posts are available.
 function reloadDigest() {
+  var savedAnchor = findReadingAnchor();
+  inProgrammaticScroll++;
   return fetch('/api/digest').then(function(r) { return r.text(); }).then(function(html) {
     tl.innerHTML = html;
     enhanceTimeline();
     updateBanner();
-    if (serverPosition) scrollToPostId(serverPosition);
+    if (savedAnchor.postId) {
+      scrollToAnchor(savedAnchor.postId, savedAnchor.fraction);
+    } else if (serverPosition && !isUserActive()) {
+      scrollToAnchor(serverPosition, serverFraction);
+    }
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        inProgrammaticScroll--;
+      });
+    });
+  }).catch(function() {
+    inProgrammaticScroll--;
   });
 }
 
@@ -426,56 +524,210 @@ function enhanceTimeline() {
   } catch(e) { console.error('enhance error:', e); }
 }
 
-// Debounced position update.
-var positionTimer = null;
-function sendPosition(postId) {
-  if (postId === localPosition) return;
-  localPosition = postId;
-  if (positionTimer) clearTimeout(positionTimer);
-  positionTimer = setTimeout(function() {
-    fetch('/api/position', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({lastSeenPostId: postId})
-    }).catch(function() {});
-  }, 500);
-}
+// --- Outgoing position updates ---
+// The server is the single writer -- it assigns a version and broadcasts.
 
-// On scroll, update position.
-window.addEventListener('scroll', function() {
-  if (suppressScrollSync) return;
-  var topId = findTopmostPostId();
-  if (topId) sendPosition(topId);
-}, { passive: true });
-
-// Poll every 5 seconds: sync mtime, position, banner.
-function poll() {
-  fetch('/api/mtime').then(function(r) { return r.json(); }).then(function(d) {
-    var mtimeChanged = (d.mtime !== serverMtime);
-    var positionChanged = (d.lastSeenPostId !== serverPosition);
-    serverMtime = d.mtime;
-    serverPosition = d.lastSeenPostId || '';
-
-    if (mtimeChanged) {
-      reloadDigest();
-    } else {
-      updateBanner();
-      // Another device moved, follow its scroll
-      if (positionChanged && serverPosition && serverPosition !== findTopmostPostId()) {
-        scrollToPostId(serverPosition);
-      }
-    }
+// Send a single anchor to the server. One job: HTTP POST.
+function postAnchor(anchor) {
+  fetch('/api/position', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      lastSeenPostId: anchor.postId,
+      lastSeenFraction: anchor.fraction
+    })
   }).catch(function() {});
 }
 
-// Initial state
+// Two anchors are effectively the same if they're in the same post and
+// within ~1% of each other in fraction. Used to dedup scroll events that
+// don't meaningfully change position.
+function anchorKey(anchor) {
+  return anchor.postId + ':' + Math.round(anchor.fraction * 100);
+}
+
+// Creates a throttled function that calls `fn` at most once per `interval` ms.
+// Trailing calls are deferred so the final value wins.
+function throttle(fn, interval) {
+  var timer = null;
+  var lastCalledAt = 0;
+  var pending = null;
+  return function(arg) {
+    pending = arg;
+    var elapsed = Date.now() - lastCalledAt;
+    if (elapsed >= interval) {
+      lastCalledAt = Date.now();
+      fn(pending);
+      pending = null;
+    } else if (!timer) {
+      timer = setTimeout(function() {
+        timer = null;
+        if (pending !== null) {
+          lastCalledAt = Date.now();
+          fn(pending);
+          pending = null;
+        }
+      }, interval - elapsed);
+    }
+  };
+}
+
+var throttledPostAnchor = throttle(postAnchor, 300);
+var lastSentKey = '';
+
+// Dedups + throttles anchor sends.
+function sendAnchor(anchor) {
+  var key = anchorKey(anchor);
+  if (key === lastSentKey) return;
+  lastSentKey = key;
+  throttledPostAnchor(anchor);
+}
+
+// On scroll, capture the reading anchor and send to the server.
+// Programmatic scrolls (scrollToAnchor) are ignored via the counter.
+window.addEventListener('scroll', function() {
+  if (inProgrammaticScroll > 0) return;
+  lastUserScrollTime = Date.now();
+  var anchor = findReadingAnchor();
+  if (anchor.postId) sendAnchor(anchor);
+}, { passive: true });
+
+// Is the user actively reading right now?
+function isUserActive() {
+  return (Date.now() - lastUserScrollTime) < IDLE_MS;
+}
+
+// Throttled scroll: when many updates arrive (sender scrolling fast),
+// coalesce to the latest target and apply at most every 80ms. If the
+// user becomes active before the throttled call fires, we skip.
+var applyAnchorIfIdle = throttle(function(anchor) {
+  if (isUserActive()) return;
+  scrollToAnchor(anchor.postId, anchor.fraction);
+}, 80);
+
+function applyScrollThrottled(postId, fraction) {
+  applyAnchorIfIdle({ postId: postId, fraction: fraction });
+}
+
+// --- Incoming server state ---
+
+// Was the server restarted since we loaded the page?
+function isServerRestart(d) {
+  return d.instanceId && knownInstanceId && d.instanceId !== knownInstanceId;
+}
+
+// Is this update strictly newer than what we've applied?
+function isNewerState(d, mtimeChanged) {
+  var v = (typeof d.version === 'number') ? d.version : -1;
+  return v > localVersion || mtimeChanged;
+}
+
+// Absorb an incoming update into our local "what the server has" copy.
+function absorbServerState(d) {
+  serverMtime = d.mtime;
+  localVersion = (typeof d.version === 'number') ? d.version : localVersion;
+  serverPosition = d.lastSeenPostId || '';
+  serverFraction = (typeof d.lastSeenFraction === 'number') ? d.lastSeenFraction : 0;
+}
+
+// Does our current viewport already match the server's anchor?
+function viewportMatchesServer() {
+  var here = findReadingAnchor();
+  if (here.postId !== serverPosition) return false;
+  return Math.abs(here.fraction - serverFraction) <= 0.02;
+}
+
+// Apply a server state update (from SSE or HTTP poll fallback).
+// Strict version ordering: we only accept updates that are strictly newer
+// than what we've already applied. The server is the single writer.
+function applyServerState(d) {
+  if (isServerRestart(d)) {
+    window.location.reload();
+    return;
+  }
+
+  var mtimeChanged = (d.mtime !== 0 && d.mtime !== serverMtime);
+  if (!isNewerState(d, mtimeChanged)) return;
+
+  absorbServerState(d);
+
+  if (mtimeChanged) {
+    reloadDigest();
+    return;
+  }
+
+  updateBanner();
+
+  // Scroll to match the server unless the user is actively reading.
+  if (serverPosition && !isUserActive() && !viewportMatchesServer()) {
+    applyScrollThrottled(serverPosition, serverFraction);
+  }
+}
+
+// Real-time sync via Server-Sent Events.
+var eventSource = null;
+function startEventStream() {
+  if (eventSource) eventSource.close();
+  eventSource = new EventSource('/api/events');
+  eventSource.onmessage = function(e) {
+    try { applyServerState(JSON.parse(e.data)); } catch(err) {}
+  };
+  eventSource.onerror = function() {
+    setTimeout(startEventStream, 2000);
+  };
+}
+
+// Force-fetch the server state. Used as a fallback for when SSE
+// events were missed (background tab, network blip, etc.).
+function forceSync() {
+  fetch('/api/mtime').then(function(r) { return r.json(); }).then(function(d) {
+    applyServerState(d);
+  }).catch(function() {});
+}
+
+// When the tab becomes visible, immediately re-sync. Safari throttles
+// SSE in background tabs, so events may have been missed.
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'visible') {
+    forceSync();
+    startEventStream();  // Reconnect SSE in case it died
+  }
+});
+
+// Also force-sync when the window regains focus.
+window.addEventListener('focus', forceSync);
+
+// Throttled mouse-move sync: when the user is looking at this device
+// (even without scrolling or clicking), refresh state.
+var lastMouseSync = 0;
+document.addEventListener('mousemove', function() {
+  var now = Date.now();
+  if (now - lastMouseSync > 1000) {
+    lastMouseSync = now;
+    forceSync();
+  }
+});
+
+// Tight safety poll: catches anything SSE missed in idle background tabs.
+setInterval(forceSync, 3000);
+
+// Initial state: the server embeds the current position, fraction, version,
+// and instance ID in body data-attrs. Seeding localVersion here means the
+// first SSE event will be correctly compared against the snapshot we loaded.
+// knownInstanceId lets us detect server restarts and auto-reload.
 serverPosition = document.body.dataset.initialPosition || '';
-localPosition = serverPosition;
+serverFraction = parseFloat(document.body.dataset.initialFraction || '0');
+if (isNaN(serverFraction)) serverFraction = 0;
+knownInstanceId = document.body.dataset.instanceId || '';
+localVersion = parseInt(document.body.dataset.initialVersion || '-1', 10);
+if (isNaN(localVersion)) localVersion = -1;
 if (serverPosition) {
-  window.addEventListener('load', function() { scrollToPostId(serverPosition); });
+  window.addEventListener('load', function() {
+    scrollToAnchor(serverPosition, serverFraction);
+  });
 }
 updateBanner();
-setInterval(poll, 5000);
+startEventStream();
 </script>
 </body>
 </html>

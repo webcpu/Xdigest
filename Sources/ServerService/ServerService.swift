@@ -31,31 +31,61 @@ public struct GenerateResult: Sendable {
 /// Called when position changes, so the app can persist it.
 public typealias PositionHandler = @Sendable (String) -> Void
 
+/// Called when the digest changes, so the app can persist it.
+public typealias DigestChangeHandler = @Sendable (Digest) -> Void
+
 /// Thread-safe mutable digest state.
-public final class DigestState: Sendable {
+///
+/// Uses a monotonic `version` number that increments on every mutation.
+/// Clients apply updates strictly in version order, which makes the server
+/// the single writer and eliminates echo-loop workarounds on the client.
+public final class DigestState: @unchecked Sendable {
     private struct State {
         var digest: Digest
         var mtime: TimeInterval
         var lastSeenPostId: String
+        /// Fraction (0.0 .. 1.0) from the top of lastSeenPostId where the
+        /// reading anchor sits. Lets the receiver place the same scroll
+        /// offset within the same post even though the post has different
+        /// height on different devices.
+        var lastSeenFraction: Double
+        var version: Int
     }
 
     private let state: Mutex<State>
+    private let sseClients = Mutex<[NWConnection]>([])
+    /// Random ID for this server instance. Browsers compare it to the one
+    /// they loaded and reload themselves if it changes -- no manual refresh
+    /// after restart.
+    public let instanceId: String = UUID().uuidString
+    /// All mutations + broadcasts run on this serial queue. This makes
+    /// "commit + broadcast" atomic with respect to other writers: no two
+    /// broadcasts can interleave on the wire, so SSE clients always see
+    /// versions in strictly monotonic order. tmux gets this for free by
+    /// having a single libevent loop; we emulate it with a serial queue.
+    private let writeQueue = DispatchQueue(label: "com.xdigest.digest-state-writes")
     let onGenerate: GenerateHandler?
     let onPositionChange: PositionHandler?
+    let onDigestChange: DigestChangeHandler?
 
     init(
         digest: Digest,
         lastSeenPostId: String = "",
+        lastSeenFraction: Double = 0,
         onGenerate: GenerateHandler? = nil,
-        onPositionChange: PositionHandler? = nil
+        onPositionChange: PositionHandler? = nil,
+        onDigestChange: DigestChangeHandler? = nil
     ) {
         self.state = Mutex(State(
             digest: digest,
             mtime: Date().timeIntervalSince1970,
-            lastSeenPostId: lastSeenPostId
+            lastSeenPostId: lastSeenPostId,
+            lastSeenFraction: lastSeenFraction,
+            version: 0
         ))
         self.onGenerate = onGenerate
         self.onPositionChange = onPositionChange
+        self.onDigestChange = onDigestChange
     }
 
     var digest: Digest {
@@ -70,15 +100,97 @@ public final class DigestState: Sendable {
         state.withLock { $0.lastSeenPostId }
     }
 
-    func updatePosition(_ postId: String) {
-        state.withLock { $0.lastSeenPostId = postId }
-        onPositionChange?(postId)
+    var lastSeenFraction: Double {
+        state.withLock { $0.lastSeenFraction }
+    }
+
+    var version: Int {
+        state.withLock { $0.version }
+    }
+
+    /// Atomic snapshot of the publicly observable state.
+    /// Use this for anything that needs multiple fields at once -- reading
+    /// `digest`, `mtime`, `version`, `lastSeenPostId` via separate accessors
+    /// can interleave with a concurrent update and return inconsistent data.
+    public struct Snapshot: Sendable {
+        public let digest: Digest
+        public let mtime: TimeInterval
+        public let lastSeenPostId: String
+        public let lastSeenFraction: Double
+        public let version: Int
+    }
+
+    func snapshot() -> Snapshot {
+        state.withLock {
+            Snapshot(
+                digest: $0.digest,
+                mtime: $0.mtime,
+                lastSeenPostId: $0.lastSeenPostId,
+                lastSeenFraction: $0.lastSeenFraction,
+                version: $0.version
+            )
+        }
+    }
+
+    func addSseClient(_ connection: NWConnection) {
+        sseClients.withLock { $0.append(connection) }
+    }
+
+    func removeSseClient(_ connection: NWConnection) {
+        sseClients.withLock { clients in
+            clients.removeAll { $0 === connection }
+        }
+    }
+
+    /// Sends an SSE event to all connected clients.
+    func broadcast(event: String) {
+        let data = Data("data: \(event)\n\n".utf8)
+        let snapshot = sseClients.withLock { Array($0) }
+        for client in snapshot {
+            client.send(content: data, completion: .contentProcessed { [weak self] error in
+                if error != nil {
+                    self?.removeSseClient(client)
+                    client.cancel()
+                }
+            })
+        }
+    }
+
+    func updatePosition(_ postId: String, fraction: Double) {
+        writeQueue.sync {
+            var changed = false
+            state.withLock {
+                // Coalesce tiny fraction changes (browser fires many scroll events).
+                let isSamePost = $0.lastSeenPostId == postId
+                let isSameFraction = abs($0.lastSeenFraction - fraction) < 0.005
+                guard !(isSamePost && isSameFraction) else { return }
+                $0.lastSeenPostId = postId
+                $0.lastSeenFraction = fraction
+                $0.version += 1
+                changed = true
+            }
+            guard changed else { return }
+            onPositionChange?(postId)
+            broadcastState()
+        }
+    }
+
+    func broadcastState() {
+        let snapshot = state.withLock { $0 }
+        let postCount = snapshot.digest.sections.reduce(0) { $0 + $1.posts.count }
+        let json = "{\"instanceId\":\"\(instanceId)\",\"version\":\(snapshot.version),\"mtime\":\(snapshot.mtime),\"postCount\":\(postCount),\"lastSeenPostId\":\"\(snapshot.lastSeenPostId)\",\"lastSeenFraction\":\(snapshot.lastSeenFraction)}"
+        broadcast(event: json)
     }
 
     func update(_ digest: Digest) {
-        state.withLock {
-            $0.digest = digest
-            $0.mtime = Date().timeIntervalSince1970
+        writeQueue.sync {
+            state.withLock {
+                $0.digest = digest
+                $0.mtime = Date().timeIntervalSince1970
+                $0.version += 1
+            }
+            onDigestChange?(digest)
+            broadcastState()
         }
     }
 }
@@ -92,7 +204,8 @@ public func startServer(
     digest: Digest,
     lastSeenPostId: String = "",
     onGenerate: GenerateHandler? = nil,
-    onPositionChange: PositionHandler? = nil
+    onPositionChange: PositionHandler? = nil,
+    onDigestChange: DigestChangeHandler? = nil
 ) async throws -> ServerHandle {
     guard port > 0, port <= 65535, let nwPort = NWEndpoint.Port(rawValue: UInt16(port)) else {
         throw XdigestError.serverStartFailed(port: port, reason: "port must be 1-65535")
@@ -102,7 +215,8 @@ public func startServer(
         digest: digest,
         lastSeenPostId: lastSeenPostId,
         onGenerate: onGenerate,
-        onPositionChange: onPositionChange
+        onPositionChange: onPositionChange,
+        onDigestChange: onDigestChange
     )
     let params = NWParameters.tcp
     let listener: NWListener
@@ -152,6 +266,11 @@ public func updateDigest(_ handle: ServerHandle, digest: Digest) {
     handle.state.update(digest)
 }
 
+/// Returns the current digest from the running server (atomic snapshot).
+public func currentDigest(_ handle: ServerHandle) -> Digest {
+    handle.state.snapshot().digest
+}
+
 // MARK: - Connection Handling
 
 private func handleConnection(_ connection: NWConnection, state: DigestState) {
@@ -164,12 +283,51 @@ private func handleConnection(_ connection: NWConnection, state: DigestState) {
         }
 
         let request = String(data: data, encoding: .utf8) ?? ""
-        let responseData = routeRequest(request, state: state)
+        let path = parseRequestPath(request)
 
+        // SSE: keep the connection open and stream events
+        if path == "/api/events" {
+            startSseStream(connection: connection, state: state)
+            return
+        }
+
+        let responseData = routeRequest(request, state: state)
         connection.send(content: responseData, completion: .contentProcessed { _ in
             connection.cancel()
         })
     }
+}
+
+/// Sends SSE response headers and registers the connection for broadcasts.
+private func startSseStream(connection: NWConnection, state: DigestState) {
+    let headers = "HTTP/1.1 200 OK\r\n"
+        + "Content-Type: text/event-stream\r\n"
+        + "Cache-Control: no-cache\r\n"
+        + "Connection: keep-alive\r\n"
+        + "Access-Control-Allow-Origin: *\r\n"
+        + "\r\n"
+
+    let snap = state.snapshot()
+    let postCount = snap.digest.sections.reduce(0) { $0 + $1.posts.count }
+    let initialEvent = "data: {\"instanceId\":\"\(state.instanceId)\",\"version\":\(snap.version),\"mtime\":\(snap.mtime),\"postCount\":\(postCount),\"lastSeenPostId\":\"\(snap.lastSeenPostId)\",\"lastSeenFraction\":\(snap.lastSeenFraction)}\n\n"
+
+    connection.send(content: Data((headers + initialEvent).utf8), completion: .contentProcessed { error in
+        if error != nil {
+            connection.cancel()
+            return
+        }
+        state.addSseClient(connection)
+
+        // Detect disconnect
+        connection.stateUpdateHandler = { newState in
+            switch newState {
+            case .failed, .cancelled:
+                state.removeSseClient(connection)
+            default:
+                break
+            }
+        }
+    })
 }
 
 // MARK: - Routing
@@ -232,25 +390,29 @@ func parseRequestPath(_ rawRequest: String) -> String {
 // MARK: - Route Handlers
 
 private func handleRoot(state: DigestState) -> String {
-    let digest = state.digest
-    let digestHTML = renderDigest(digest)
-    let page = readerPage(digestHTML: digestHTML, initialPosition: state.lastSeenPostId)
+    let snap = state.snapshot()
+    let digestHTML = renderDigest(snap.digest)
+    let page = readerPage(
+        digestHTML: digestHTML,
+        initialPosition: snap.lastSeenPostId,
+        initialFraction: snap.lastSeenFraction,
+        initialVersion: snap.version,
+        instanceId: state.instanceId
+    )
     return httpResponse(status: 200, contentType: "text/html; charset=utf-8", body: page)
 }
 
 private func handleApiDigest(state: DigestState) -> String {
-    let digest = state.digest
+    let digest = state.snapshot().digest
     let html = renderDigest(digest)
     return httpResponse(status: 200, contentType: "text/html; charset=utf-8", body: html)
 }
 
 private func handleApiMtime(state: DigestState) -> String {
-    let digest = state.digest
-    let mtime = state.mtime
-    let postCount = digest.sections.reduce(0) { $0 + $1.posts.count }
-    let position = state.lastSeenPostId
+    let snap = state.snapshot()
+    let postCount = snap.digest.sections.reduce(0) { $0 + $1.posts.count }
     let json = """
-    {"mtime":\(mtime),"postCount":\(postCount),"lastSeenPostId":"\(escapeJSON(position))"}
+    {"instanceId":"\(state.instanceId)","version":\(snap.version),"mtime":\(snap.mtime),"postCount":\(postCount),"lastSeenPostId":"\(escapeJSON(snap.lastSeenPostId))","lastSeenFraction":\(snap.lastSeenFraction)}
     """
     return httpResponse(status: 200, contentType: "application/json", body: json)
 }
@@ -270,7 +432,8 @@ private func handlePostPosition(rawRequest: String, state: DigestState) -> Strin
         return httpResponse(status: 400, contentType: "application/json",
                             body: "{\"error\":\"missing lastSeenPostId\"}")
     }
-    state.updatePosition(postId)
+    let fraction = (obj["lastSeenFraction"] as? Double) ?? 0
+    state.updatePosition(postId, fraction: fraction)
     return httpResponse(status: 200, contentType: "application/json", body: "{\"ok\":true}")
 }
 

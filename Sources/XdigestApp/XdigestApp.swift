@@ -91,13 +91,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         Task {
             do {
-                let digest = try await generate()
+                let currentDigest = serverHandle.map { ServerService.currentDigest($0) }
+                let outcome = try await generate(currentDigest: currentDigest)
+                try? saveSeen(outcome.seenIds)
                 if let handle = serverHandle {
-                    updateDigest(handle, digest: digest)
+                    updateDigest(handle, digest: outcome.digest)
                 }
                 showNotification(
                     title: "Xdigest",
-                    body: "\(digest.sections.first?.posts.count ?? 0) new posts"
+                    body: "\(outcome.digest.sections.first?.posts.count ?? 0) new posts"
                 )
             } catch {
                 showNotification(title: "Xdigest Error", body: error.localizedDescription)
@@ -136,6 +138,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     },
                     onPositionChange: { postId in
                         try? Pipeline.savePosition(postId)
+                    },
+                    onDigestChange: { digest in
+                        try? Pipeline.saveDigest(digest)
                     }
                 )
                 self.log("[App] Server started on port \(serverPort)")
@@ -173,12 +178,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Task.detached {
             self.log("[App] Pipeline task started")
             do {
-                let digest = try await generate()
-                let picks = digest.sections.first?.posts.count ?? 0
+                // Read the current digest from the single writer (DigestState)
+                let currentDigest = await MainActor.run { () -> Digest? in
+                    guard let handle = self.serverHandle else { return nil }
+                    return ServerService.currentDigest(handle)
+                }
+                let outcome = try await generate(currentDigest: currentDigest)
+                let picks = outcome.digest.sections.first?.posts.count ?? 0
                 self.log("[App] Pipeline produced \(picks) posts")
+                // Persist seen cache (the digest persists via DigestState.onDigestChange)
+                try? saveSeen(outcome.seenIds)
                 await MainActor.run {
                     if let handle = self.serverHandle {
-                        ServerService.updateDigest(handle, digest: digest)
+                        ServerService.updateDigest(handle, digest: outcome.digest)
                     }
                     self.isGenerating = false
                     self.rebuildMenu()

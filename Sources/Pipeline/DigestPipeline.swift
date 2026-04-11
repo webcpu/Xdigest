@@ -4,13 +4,25 @@ import ScorerService
 import DigestService
 import XdigestCore
 
-/// Runs the full digest pipeline: fetch -> score -> assemble.
-/// Manages the seen cache for cross-run dedup.
+/// Result of running the pipeline: the new (merged) digest and the updated
+/// set of seen IDs. The caller is responsible for persisting both -- the
+/// pipeline itself does no disk I/O on the output side.
+public struct GenerateOutcome: Sendable {
+    public let digest: Digest
+    public let seenIds: Set<String>
+}
+
+/// Runs the full digest pipeline: fetch -> score -> assemble -> merge.
+///
+/// `currentDigest` is the app's authoritative current digest (from DigestState),
+/// not read from disk. This ensures the pipeline never diverges from the
+/// in-memory server state.
 public func generate(
+    currentDigest: Digest?,
     count: Int = 100,
     topN: Int = 10,
     cacheDir: URL = defaultCacheDir()
-) async throws -> Digest {
+) async throws -> GenerateOutcome {
     let bird = try BirdService()
     let scorer = try ScorerService()
 
@@ -24,17 +36,11 @@ public func generate(
     let newDigest = assemble(scored)
 
     let newIds = renderedIds(from: newDigest)
-    if !newIds.isEmpty {
-        let updated = seen.union(newIds)
-        try saveSeen(updated, to: cacheDir)
-    }
+    let updatedSeen = newIds.isEmpty ? seen : seen.union(newIds)
 
-    // Merge: prepend new sections to existing digest
-    let existing = loadDigest(from: cacheDir)
-    let merged = mergeDigests(new: newDigest, existing: existing)
+    let merged = mergeDigests(new: newDigest, existing: currentDigest)
 
-    try saveDigest(merged, to: cacheDir)
-    return merged
+    return GenerateOutcome(digest: merged, seenIds: updatedSeen)
 }
 
 /// Prepends new sections to an existing digest.
