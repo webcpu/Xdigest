@@ -71,8 +71,21 @@ fi
 
 echo "==> Phase 3: developer name leak"
 NAME="$(git config user.name || true)"
+# If git config user.name matches the GitHub repo owner (derived from
+# `origin`), it's a public handle -- the whole point is that it's in
+# URLs and code that references the repo. Not a PII leak. Skip the
+# check to avoid false positives on projects where user.name is a
+# GitHub handle rather than a real name.
+REPO_OWNER=""
+REMOTE_URL="$(git remote get-url origin 2>/dev/null || true)"
+if [ -n "$REMOTE_URL" ]; then
+    REPO_OWNER=$(printf '%s' "$REMOTE_URL" | sed -nE 's#.*github\.com[:/]([^/]+)/.*#\1#p')
+fi
+
 if [ -z "$NAME" ]; then
     echo "    SKIP: git config user.name is empty"
+elif [ -n "$REPO_OWNER" ] && [ "$NAME" = "$REPO_OWNER" ]; then
+    echo "    SKIP: git config user.name ('$NAME') equals the repo owner -- public handle"
 else
     # Exclude docs/license files where the name legitimately appears.
     HITS=$(git ls-files \
