@@ -1,8 +1,12 @@
 # Xdigest
 
-A macOS menu bar app that filters your X (Twitter) For You feed for high-signal posts using your bookmarks as taste signal.
+**X's For You feed optimizes for engagement, not for you.** You scroll past noise to find a few posts that matter. Most of the good ones get lost in the flood.
 
-**How it works:** Your bookmarks define your taste. Xdigest fetches your feed, asks Claude to score each post against your bookmarks, and surfaces the best matches in a local reader.
+**Your bookmarks are your taste.** They're the posts you actually cared about enough to save. But nothing uses them -- they just sit there.
+
+**Xdigest closes that loop.** It fetches your feed, scores each post against your bookmarks with Claude, and gives you a short daily digest in your browser. No firehose. No doomscrolling. Just the posts you'd actually want to read.
+
+**Read on any device.** Phone, Mac, iPad -- Xdigest keeps them all in sync. Pick up right where you left off, every time. It just works.
 
 ## Requirements
 
@@ -51,11 +55,13 @@ Or click the refresh button in the reader. When new posts are generated, a blue 
 
 ### Access from iPhone/iPad
 
-The reader is accessible from any device on the same network. Open Safari on your iPhone or iPad and go to `http://your-mac.local:8408`.
+**On the same Wi-Fi as your Mac**: open Safari on your iPhone or iPad and go to `http://your-mac.local:8408`.
 
-On first launch, macOS will ask whether Xdigest can accept incoming connections. **Click Allow** -- otherwise iPhone/iPad can't reach the reader. If you click Deny by mistake, Xdigest detects this and shows a setup window with a link to fix it.
+**Not on the same Wi-Fi? Use [Tailscale](https://tailscale.com/).** Install it on your Mac and your iOS device, then use your Mac's Tailscale name: `http://your-mac-name:8408`. The reader works from anywhere -- your couch, a coffee shop, another country. No port forwarding, no public exposure, no dynamic DNS.
 
-**Reveal state is synced across devices**: when you click the "N new posts" banner on one device, the others catch up automatically. Section open/closed state is local for now.
+On first launch, macOS will ask whether Xdigest can accept incoming connections. **Click Allow** -- otherwise nothing (LAN or Tailscale) can reach the reader. If you click Deny by mistake, Xdigest detects it and shows a setup window with a link to fix it.
+
+**Reveal state syncs across devices** in real time: click the "N new posts" banner on one device and the others catch up automatically.
 
 ## Architecture
 
@@ -74,22 +80,6 @@ BirdService -> ScorerService -> DigestService -> ServerService -> Browser
 - **ServerService** -- HTTP server with HTML reader and video proxy
 - **Pipeline** -- orchestrates the flow with retry and caching
 - **Updater** -- checks GitHub Releases for newer versions (reusable as a standalone SPM target)
-
-## Features
-
-- Bookmark-based taste matching via Claude Opus
-- Tag-based search (Claude generates tags at scoring time)
-- Cross-run dedup (won't show the same post twice)
-- Repost detection (shows original author)
-- Video playback via local proxy (no CORS issues)
-- Foldable timestamp sections
-- Real-time cross-device sync via Server-Sent Events
-- Auto-open on launch -- goes straight to today's digest
-- Single-instance policy (latest launch wins)
-- Built-in update checker (notifies when a new release is available)
-- Responsive (works on Mac, iPhone, iPad)
-- Per-day digest files (scales to years of use)
-- Setup check on launch (guides users through missing requirements)
 
 ## Privacy
 
