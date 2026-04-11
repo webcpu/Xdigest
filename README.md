@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="Resources/xdigest.png" width="128" alt="Xdigest app icon">
+</p>
+
 # Xdigest
 
 **X's For You feed optimizes for engagement, not for you.** You scroll past noise to find a few posts that matter. Most of the good ones get lost in the flood.
