@@ -48,7 +48,7 @@ func checkSetup() -> [SetupIssue] {
         case .needsFullDiskAccess:
             issues.append(SetupIssue(
                 title: "Full Disk Access required",
-                description: "macOS blocks Xdigest from reading Safari cookies. In System Settings → Privacy & Security → Full Disk Access, enable Xdigest. Then quit and relaunch the app.",
+                description: "macOS needs your permission for Xdigest to read Safari's cookies. Click below to open System Settings, enable Xdigest in the list, then switch back to this window.",
                 action: "Open Full Disk Access Settings",
                 actionUrl: "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_AllFiles"
             ))

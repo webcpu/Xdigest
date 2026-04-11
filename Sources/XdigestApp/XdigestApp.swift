@@ -32,6 +32,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         setupStatusItem()
+        // Re-run the setup check every time the app regains focus.
+        // When the user returns from System Settings after granting Full
+        // Disk Access, the setup window closes automatically and the
+        // server starts -- no need to click "Check Again".
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appBecameActive),
+            name: NSApplication.didBecomeActiveNotification,
+            object: nil
+        )
+        runSetupCheck()
+    }
+
+    @objc private func appBecameActive() {
+        // Only relevant while the setup window is visible.
+        guard setupWindow != nil else { return }
         runSetupCheck()
     }
 
@@ -40,7 +56,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if issues.isEmpty {
             setupWindow?.close()
             setupWindow = nil
-            startServer()
+            NSApp.setActivationPolicy(.accessory)
+            if serverHandle == nil { startServer() }
         } else {
             NSApp.setActivationPolicy(.regular)
             setupWindow = showSetupWindow(issues: issues) { [weak self] in
