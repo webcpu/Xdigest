@@ -31,13 +31,13 @@ func checkSetup() -> [SetupIssue] {
         ))
     }
 
-    // 3. Safari X login (check if bird can actually fetch)
+    // 3. X login (check if bird can actually fetch from any browser)
     if findBird() != nil {
         if !canBirdAccessX() {
             issues.append(SetupIssue(
-                title: "Not logged into X in Safari",
-                description: "bird reads your Safari cookies to access X. You need to be logged into x.com in Safari.",
-                action: "Open Safari, go to x.com, and log in."
+                title: "Not logged into X",
+                description: "bird reads your browser cookies to access X. You need to be logged into x.com in Safari, Chrome, or Firefox.",
+                action: "Open a browser, go to x.com, and log in."
             ))
         }
     }
