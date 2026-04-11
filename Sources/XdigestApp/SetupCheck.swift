@@ -40,9 +40,19 @@ func checkSetup() -> [SetupIssue] {
         ))
     }
 
-    // 3. X login (check if bird can actually fetch from any browser)
+    // 3. X login / Safari cookie access
     if findBird() != nil {
-        if !canBirdAccessX() {
+        switch diagnoseBird() {
+        case .ok:
+            break
+        case .needsFullDiskAccess:
+            issues.append(SetupIssue(
+                title: "Full Disk Access required",
+                description: "macOS blocks Xdigest from reading Safari cookies. In System Settings → Privacy & Security → Full Disk Access, enable Xdigest. Then quit and relaunch the app.",
+                action: "Open Full Disk Access Settings",
+                actionUrl: "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_AllFiles"
+            ))
+        case .notLoggedIn:
             issues.append(SetupIssue(
                 title: "Not logged into X",
                 description: "bird reads your browser cookies to access X. Log into x.com in Safari, Chrome, or Firefox (not a web app added to the dock -- those have isolated cookies).",
@@ -122,22 +132,43 @@ private func runSocketFilterFW(_ args: [String]) -> String? {
 }
 
 /// Quick check: can bird fetch at least one tweet?
-private func canBirdAccessX() -> Bool {
-    guard let birdPath = findBird() else { return false }
+private enum BirdDiagnosis {
+    case ok
+    case needsFullDiskAccess
+    case notLoggedIn
+}
+
+/// Runs bird and classifies the failure mode, so the setup window can
+/// give a targeted fix (Full Disk Access vs log into X).
+private func diagnoseBird() -> BirdDiagnosis {
+    guard let birdPath = findBird() else { return .notLoggedIn }
 
     let process = Process()
-    let pipe = Pipe()
+    let errPipe = Pipe()
     process.executableURL = URL(fileURLWithPath: birdPath)
     process.arguments = ["home", "-n", "1", "--plain"]
-    process.standardOutput = pipe
-    process.standardError = FileHandle.nullDevice
+    process.standardOutput = FileHandle.nullDevice
+    process.standardError = errPipe
 
     do {
         try process.run()
         process.waitUntilExit()
     } catch {
-        return false
+        return .notLoggedIn
     }
 
-    return process.terminationStatus == 0
+    if process.terminationStatus == 0 { return .ok }
+
+    let stderr = String(
+        data: errPipe.fileHandleForReading.readDataToEndOfFile(),
+        encoding: .utf8
+    ) ?? ""
+
+    // TCC-blocked Safari cookie access. This happens when the app is
+    // launched from Finder (no Full Disk Access) instead of a terminal
+    // whose parent Terminal.app has the permission.
+    if stderr.contains("EPERM") || stderr.contains("operation not permitted") {
+        return .needsFullDiskAccess
+    }
+    return .notLoggedIn
 }
