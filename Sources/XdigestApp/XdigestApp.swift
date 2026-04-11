@@ -29,6 +29,40 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var setupWindow: NSWindow?
     private var isGenerating = false
 
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        // Single-instance policy: the latest launched instance wins. Any
+        // older Xdigest processes get terminated before we bind port 8408
+        // or register a status item, so two instances never compete.
+        terminateOtherInstances()
+    }
+
+    /// Terminates any other running Xdigest processes (same bundle ID) so
+    /// this instance can take over the menu bar, the server port, and the
+    /// Obsidian vault without resource contention.
+    private func terminateOtherInstances() {
+        let myPid = getpid()
+        let bundleId = "com.xdigest.app"
+
+        func othersRunning() -> [NSRunningApplication] {
+            NSRunningApplication.runningApplications(withBundleIdentifier: bundleId)
+                .filter { $0.processIdentifier != myPid }
+        }
+
+        let others = othersRunning()
+        guard !others.isEmpty else { return }
+
+        for other in others { other.terminate() }
+
+        // Wait up to 2 seconds for graceful shutdown (20 × 100ms).
+        for _ in 0..<20 {
+            if othersRunning().isEmpty { return }
+            Thread.sleep(forTimeInterval: 0.1)
+        }
+
+        // Force-kill any stragglers that ignored SIGTERM.
+        for straggler in othersRunning() { straggler.forceTerminate() }
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         setupStatusItem()
