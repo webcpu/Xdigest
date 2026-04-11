@@ -24,16 +24,21 @@ set -euo pipefail
 
 APP_NAME="Xdigest"
 BUNDLE_ID="com.xdigest.app"
-VERSION="0.1.0"
 NOTARY_PROFILE="${XDIGEST_NOTARY_PROFILE:-xdigest-notary}"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 BUILD_DIR="$PROJECT_DIR/.build/release"
 DIST_DIR="$PROJECT_DIR/dist"
+SOURCE_INFO_PLIST="$PROJECT_DIR/Sources/XdigestApp/Info.plist"
 APP_BUNDLE="$DIST_DIR/$APP_NAME.app"
 APP_ZIP="$DIST_DIR/$APP_NAME.zip"
 DMG_PATH="$DIST_DIR/$APP_NAME.dmg"
+
+# Single source of truth: the committed Info.plist holds both values.
+# `release.sh` updates this file; make-dmg.sh just reads it.
+VERSION=$(plutil -extract CFBundleShortVersionString raw -o - "$SOURCE_INFO_PLIST")
+BUILD=$(plutil -extract CFBundleVersion raw -o - "$SOURCE_INFO_PLIST")
 
 NOTARIZE=1
 
@@ -88,7 +93,7 @@ write_info_plist() {
     <key>CFBundleShortVersionString</key>
     <string>$VERSION</string>
     <key>CFBundleVersion</key>
-    <string>1</string>
+    <string>$BUILD</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>LSMinimumSystemVersion</key>

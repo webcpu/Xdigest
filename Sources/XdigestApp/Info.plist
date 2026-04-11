@@ -7,9 +7,9 @@
     <key>CFBundleName</key>
     <string>Xdigest</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.1</string>
+    <string>0.1.0</string>
     <key>CFBundleVersion</key>
-    <string>1</string>
+    <string>20260411.173845</string>
     <key>LSUIElement</key>
     <true/>
 </dict>
