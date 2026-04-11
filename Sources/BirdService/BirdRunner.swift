@@ -3,45 +3,11 @@ import XdigestCore
 
 // MARK: - Find Bird
 
-/// Checks known Homebrew install paths for the bird binary.
-private func findBirdInKnownPaths() -> String? {
-    let candidates = [
-        "/opt/homebrew/bin/bird",
-        "/usr/local/bin/bird",
-    ]
-    return candidates.first { FileManager.default.isExecutableFile(atPath: $0) }
-}
-
-/// Searches PATH for the bird binary via /usr/bin/which.
-private func findBirdInPATH() -> String? {
-    let process = Process()
-    let pipe = Pipe()
-    process.executableURL = URL(fileURLWithPath: "/usr/bin/which")
-    process.arguments = ["bird"]
-    process.standardOutput = pipe
-    process.standardError = FileHandle.nullDevice
-
-    do {
-        try process.run()
-        process.waitUntilExit()
-    } catch {
-        return nil
-    }
-
-    let data = pipe.fileHandleForReading.readDataToEndOfFile()
-    let path = String(data: data, encoding: .utf8)?
-        .trimmingCharacters(in: .whitespacesAndNewlines)
-
-    guard let path, !path.isEmpty,
-          FileManager.default.isExecutableFile(atPath: path)
-    else { return nil }
-
-    return path
-}
-
-/// Locates the bird binary. Checks known paths first, then PATH.
+/// Locates the bird binary. Checks common user and system install paths.
+/// This is more reliable than `which` because bundled apps have a minimal
+/// PATH that excludes ~/.local/bin and similar user-specific directories.
 public func findBird() -> String? {
-    findBirdInKnownPaths() ?? findBirdInPATH()
+    findExecutable(named: "bird")
 }
 
 // MARK: - Run Bird

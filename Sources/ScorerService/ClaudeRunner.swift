@@ -1,43 +1,9 @@
 import Foundation
 import XdigestCore
 
-/// Locates the claude binary on the system.
+/// Locates the claude binary via `which` in a login shell.
 public func findClaude() -> String? {
-    findClaudeInKnownPaths() ?? findClaudeInPATH()
-}
-
-private func findClaudeInKnownPaths() -> String? {
-    let candidates = [
-        "/usr/local/bin/claude",
-        "/opt/homebrew/bin/claude",
-    ]
-    return candidates.first { FileManager.default.isExecutableFile(atPath: $0) }
-}
-
-private func findClaudeInPATH() -> String? {
-    let process = Process()
-    let pipe = Pipe()
-    process.executableURL = URL(fileURLWithPath: "/usr/bin/which")
-    process.arguments = ["claude"]
-    process.standardOutput = pipe
-    process.standardError = FileHandle.nullDevice
-
-    do {
-        try process.run()
-        process.waitUntilExit()
-    } catch {
-        return nil
-    }
-
-    let data = pipe.fileHandleForReading.readDataToEndOfFile()
-    let path = String(data: data, encoding: .utf8)?
-        .trimmingCharacters(in: .whitespacesAndNewlines)
-
-    guard let path, !path.isEmpty,
-          FileManager.default.isExecutableFile(atPath: path)
-    else { return nil }
-
-    return path
+    findExecutable(named: "claude")
 }
 
 /// Writes the prompt to a temp file and runs claude with structured output.
