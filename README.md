@@ -34,12 +34,6 @@ swift build -c release
 ./.build/release/Xdigest
 ```
 
-Or build the DMG:
-
-```bash
-./scripts/make-dmg.sh
-```
-
 ## Usage
 
 Launch Xdigest. The **XD** wordmark appears in your menu bar (template image, adapts to light/dark/tinted menu bar). Click it:
