@@ -1,9 +1,14 @@
 #!/bin/bash
-# Build + sign + (optionally notarize) a release DMG for Xdigest.
+# Build + sign + notarize a distributable DMG for Xdigest.
+#
+# Notarization is ON by default -- a DMG that Gatekeeper rejects on first
+# launch is not a distributable artifact, so shipping "signed but not
+# notarized" makes no sense as a default. Use --no-notarize for fast local
+# iteration (icon tweaks, smoke tests) when you don't need a shippable DMG.
 #
 # Usage:
-#   ./scripts/make-dmg.sh              # build, sign, verify
-#   ./scripts/make-dmg.sh --notarize   # also notarize + staple for distribution
+#   ./scripts/make-dmg.sh                 # build, sign, notarize, staple
+#   ./scripts/make-dmg.sh --no-notarize   # skip notarization (local dev only)
 #
 # Notarization requires a stored keychain profile. Create one once via:
 #   xcrun notarytool store-credentials xdigest-notary \
@@ -13,51 +18,61 @@
 
 set -euo pipefail
 
+# -----------------------------------------------------------------------------
+# Config
+# -----------------------------------------------------------------------------
+
 APP_NAME="Xdigest"
 BUNDLE_ID="com.xdigest.app"
 VERSION="0.1.0"
-# Keychain profile used for xcrun notarytool. Override via env if needed.
 NOTARY_PROFILE="${XDIGEST_NOTARY_PROFILE:-xdigest-notary}"
-
-NOTARIZE=0
-for arg in "$@"; do
-    case "$arg" in
-        --notarize) NOTARIZE=1 ;;
-        *)          echo "Unknown flag: $arg"; exit 1 ;;
-    esac
-done
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 BUILD_DIR="$PROJECT_DIR/.build/release"
 DIST_DIR="$PROJECT_DIR/dist"
 APP_BUNDLE="$DIST_DIR/$APP_NAME.app"
-DMG_PATH="$DIST_DIR/$APP_NAME-$VERSION.dmg"
+APP_ZIP="$DIST_DIR/$APP_NAME.zip"
+DMG_PATH="$DIST_DIR/$APP_NAME.dmg"
+
+NOTARIZE=1
 
 # -----------------------------------------------------------------------------
-# 1. Build + icon
+# Helpers
 # -----------------------------------------------------------------------------
 
-echo "==> Building release"
-cd "$PROJECT_DIR"
-swift build -c release
-
-echo "==> Building app icon"
-"$SCRIPT_DIR/make-icon.sh"
+log()    { printf '==> %s\n' "$*"; }
+detail() { sed 's/^/    /'; }
+die()    { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
 
 # -----------------------------------------------------------------------------
-# 2. Assemble .app bundle
+# Phases -- each does ONE thing, no knowledge of other phases
 # -----------------------------------------------------------------------------
 
-echo "==> Creating app bundle"
-rm -rf "$DIST_DIR"
-mkdir -p "$APP_BUNDLE/Contents/MacOS"
-mkdir -p "$APP_BUNDLE/Contents/Resources"
+parse_args() {
+    for arg in "$@"; do
+        case "$arg" in
+            --no-notarize) NOTARIZE=0 ;;
+            *)             die "Unknown flag: $arg" ;;
+        esac
+    done
+}
 
-cp "$BUILD_DIR/$APP_NAME" "$APP_BUNDLE/Contents/MacOS/$APP_NAME"
-cp "$PROJECT_DIR/Resources/Xdigest.icns" "$APP_BUNDLE/Contents/Resources/Xdigest.icns"
+build_release() {
+    cd "$PROJECT_DIR"
+    swift build -c release
+    [ -x "$BUILD_DIR/$APP_NAME" ] || die "no executable at $BUILD_DIR/$APP_NAME"
+    printf '    built %s\n' "$BUILD_DIR/$APP_NAME"
+}
 
-cat > "$APP_BUNDLE/Contents/Info.plist" << PLIST
+build_icon() {
+    "$SCRIPT_DIR/make-icon.sh"
+    [ -f "$PROJECT_DIR/Resources/Xdigest.icns" ] \
+        || die "make-icon.sh did not produce Resources/Xdigest.icns"
+}
+
+write_info_plist() {
+    cat << PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -85,79 +100,182 @@ cat > "$APP_BUNDLE/Contents/Info.plist" << PLIST
 </dict>
 </plist>
 PLIST
+}
 
-# -----------------------------------------------------------------------------
-# 3. Sign
-# -----------------------------------------------------------------------------
+assemble_bundle() {
+    rm -rf "$DIST_DIR"
+    mkdir -p "$APP_BUNDLE/Contents/MacOS"
+    mkdir -p "$APP_BUNDLE/Contents/Resources"
+    cp "$BUILD_DIR/$APP_NAME" "$APP_BUNDLE/Contents/MacOS/$APP_NAME"
+    cp "$PROJECT_DIR/Resources/Xdigest.icns" "$APP_BUNDLE/Contents/Resources/Xdigest.icns"
+    write_info_plist > "$APP_BUNDLE/Contents/Info.plist"
+}
 
-echo "==> Signing"
-"$SCRIPT_DIR/sign.sh" "$APP_BUNDLE/Contents/MacOS/$APP_NAME" >/dev/null
-"$SCRIPT_DIR/sign.sh" "$APP_BUNDLE" >/dev/null
+verify_bundle() {
+    [ -x "$APP_BUNDLE/Contents/MacOS/$APP_NAME" ] \
+        || die "binary missing from bundle at Contents/MacOS/$APP_NAME"
+    plutil -lint "$APP_BUNDLE/Contents/Info.plist" >/dev/null \
+        || die "invalid Info.plist"
+    [ -f "$APP_BUNDLE/Contents/Resources/Xdigest.icns" ] \
+        || die "icon missing from bundle at Contents/Resources/Xdigest.icns"
+    printf '    binary + Info.plist + icon present\n'
+}
 
-echo "==> Verifying signature"
-codesign --verify --deep --strict --verbose=2 "$APP_BUNDLE" 2>&1 | sed 's/^/    /'
-# Expect: valid on disk + satisfies its Designated Requirement
+sign_binary() {
+    "$SCRIPT_DIR/sign.sh" "$APP_BUNDLE/Contents/MacOS/$APP_NAME" 2>&1 | detail
+}
 
-echo "==> Gatekeeper assessment"
-if spctl --assess --verbose=2 "$APP_BUNDLE" 2>&1 | sed 's/^/    /'; then
-    echo "    OK"
-else
-    echo "    WARN: Gatekeeper rejected the app (expected if not yet notarized)"
-fi
+sign_bundle() {
+    "$SCRIPT_DIR/sign.sh" "$APP_BUNDLE" 2>&1 | detail
+}
 
-# -----------------------------------------------------------------------------
-# 4. Build DMG
-# -----------------------------------------------------------------------------
+verify_signature() {
+    codesign --verify --deep --strict --verbose=2 "$APP_BUNDLE" 2>&1 | detail
+}
 
-echo "==> Creating DMG"
-rm -f "$DIST_DIR"/*.dmg
-create-dmg "$APP_BUNDLE" "$DIST_DIR" || true
-# create-dmg exits non-zero on some macOS versions even on success
+assess_gatekeeper() {
+    if spctl --assess --verbose=2 "$APP_BUNDLE" 2>&1 | detail; then
+        printf '    OK\n'
+    else
+        printf '    WARN: Gatekeeper rejected the app (expected if not yet notarized)\n'
+    fi
+}
 
-RAW_DMG=$(ls "$DIST_DIR"/*.dmg 2>/dev/null | head -1)
-if [ -z "$RAW_DMG" ]; then
-    echo "ERROR: DMG was not created"
+build_dmg() {
+    rm -f "$DIST_DIR"/*.dmg
+    # create-dmg exits non-zero on some macOS versions even on success.
+    create-dmg "$APP_BUNDLE" "$DIST_DIR" 2>&1 | detail || true
+
+    local raw
+    raw=$(ls "$DIST_DIR"/*.dmg 2>/dev/null | head -1)
+    [ -n "$raw" ] || die "create-dmg produced no .dmg file in $DIST_DIR"
+    mv "$raw" "$DMG_PATH"
+    printf '    %s\n' "$DMG_PATH"
+}
+
+verify_dmg_signature() {
+    codesign --verify --verbose=2 "$DMG_PATH" 2>&1 | detail
+}
+
+verify_dmg_integrity() {
+    hdiutil verify "$DMG_PATH" 2>&1 | detail
+}
+
+require_notary_profile() {
+    xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" >/dev/null 2>&1 && return 0
+    cat >&2 <<EOF
+ERROR: no notarytool keychain profile '$NOTARY_PROFILE' found.
+Create one once with:
+
+    xcrun notarytool store-credentials $NOTARY_PROFILE \\
+      --apple-id YOUR_APPLE_ID \\
+      --team-id  NA5BE2D52P \\
+      --password APP_SPECIFIC_PASSWORD
+
+EOF
     exit 1
-fi
-mv "$RAW_DMG" "$DMG_PATH"
-echo "    $DMG_PATH"
+}
+
+zip_app() {
+    # ditto preserves bundle structure and HFS+/APFS extended attributes,
+    # which codesign and notarytool require. Plain `zip` strips xattrs.
+    rm -f "$APP_ZIP"
+    ditto -c -k --keepParent "$APP_BUNDLE" "$APP_ZIP"
+    [ -f "$APP_ZIP" ] || die "ditto did not produce $APP_ZIP"
+    printf '    %s\n' "$APP_ZIP"
+}
+
+submit_notarization() {
+    local artifact=$1
+    local log_file status
+    log_file=$(mktemp)
+
+    set +e
+    xcrun notarytool submit "$artifact" \
+        --keychain-profile "$NOTARY_PROFILE" \
+        --wait 2>&1 | tee "$log_file" | detail
+    status=${PIPESTATUS[0]}
+    set -e
+
+    if [ "$status" -ne 0 ]; then
+        rm -f "$log_file"
+        die "notarytool submit exited $status"
+    fi
+    if ! grep -q "status: Accepted" "$log_file"; then
+        rm -f "$log_file"
+        die "notarization did not return 'status: Accepted' (see log above)"
+    fi
+    rm -f "$log_file"
+    printf '    notarization accepted\n'
+}
+
+staple_ticket() {
+    xcrun stapler staple "$1" 2>&1 | detail
+}
+
+verify_stapled() {
+    xcrun stapler validate "$1" 2>&1 | detail
+}
+
+assess_notarized_app() {
+    spctl --assess --verbose=2 "$APP_BUNDLE" 2>&1 | detail
+}
+
+assess_notarized_dmg() {
+    spctl --assess --type open --context context:primary-signature --verbose=2 \
+        "$DMG_PATH" 2>&1 | detail
+}
 
 # -----------------------------------------------------------------------------
-# 5. Notarize + staple (optional)
+# Main -- composes the phases top-down like a Unix pipeline
 # -----------------------------------------------------------------------------
 
-if [ "$NOTARIZE" = "1" ]; then
-    if ! xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" >/dev/null 2>&1; then
-        echo "ERROR: no notarytool keychain profile '$NOTARY_PROFILE' found."
-        echo "Create one once with:"
-        echo ""
-        echo "    xcrun notarytool store-credentials $NOTARY_PROFILE \\"
-        echo "      --apple-id YOUR_APPLE_ID \\"
-        echo "      --team-id  NA5BE2D52P \\"
-        echo "      --password APP_SPECIFIC_PASSWORD"
-        echo ""
-        exit 1
+main() {
+    parse_args "$@"
+
+    log "Building release";        build_release
+    log "Building app icon";       build_icon
+    log "Creating app bundle";     assemble_bundle
+    log "Verifying bundle layout"; verify_bundle
+    log "Signing binary";          sign_binary
+    log "Signing bundle";          sign_bundle
+    log "Verifying signature";     verify_signature
+    log "Gatekeeper assessment";   assess_gatekeeper
+
+    # Notarize the .app FIRST so the ticket gets stapled into the bundle
+    # before it's wrapped in a DMG. Users who extract the .app from the DMG
+    # (or receive it via any channel) then get an app that carries its own
+    # ticket and launches offline on any machine.
+    if [ "$NOTARIZE" = "1" ]; then
+        require_notary_profile
+        log "Zipping app for notarization";                  zip_app
+        log "Submitting app for notarization (1-5 minutes)"
+        submit_notarization "$APP_ZIP"
+        log "Stapling notarization ticket to app";           staple_ticket "$APP_BUNDLE"
+        log "Verifying stapled app";                         verify_stapled "$APP_BUNDLE"
+        log "Gatekeeper assessment (notarized app)";         assess_notarized_app
+        rm -f "$APP_ZIP"
     fi
 
-    echo "==> Submitting DMG for notarization (this takes 1-5 minutes)"
-    xcrun notarytool submit "$DMG_PATH" \
-        --keychain-profile "$NOTARY_PROFILE" \
-        --wait 2>&1 | sed 's/^/    /'
+    log "Creating DMG";            build_dmg
+    log "Verifying DMG signature"; verify_dmg_signature
+    log "Verifying DMG integrity"; verify_dmg_integrity
 
-    echo "==> Stapling notarization ticket"
-    xcrun stapler staple "$DMG_PATH" 2>&1 | sed 's/^/    /'
+    # Notarize the DMG SECOND so downloaded DMGs also carry a stapled
+    # ticket and Gatekeeper accepts them offline on first mount.
+    if [ "$NOTARIZE" = "1" ]; then
+        log "Submitting DMG for notarization (1-5 minutes)"
+        submit_notarization "$DMG_PATH"
+        log "Stapling notarization ticket to DMG";           staple_ticket "$DMG_PATH"
+        log "Verifying stapled DMG";                         verify_stapled "$DMG_PATH"
+        log "Gatekeeper assessment (notarized DMG)";         assess_notarized_dmg
+    else
+        log "Skipping notarization (--no-notarize set)"
+        printf '    WARN: this DMG is NOT distributable -- Gatekeeper will reject it on first launch\n'
+    fi
 
-    echo "==> Verifying stapled DMG"
-    xcrun stapler validate "$DMG_PATH" 2>&1 | sed 's/^/    /'
-    spctl --assess --type open --context context:primary-signature --verbose=2 "$DMG_PATH" 2>&1 | sed 's/^/    /'
-else
-    echo "==> Skipping notarization (use --notarize to enable)"
-    echo "    Downloaded DMGs will show a Gatekeeper warning on first launch."
-fi
+    log "Done"
+    ls -lh "$DMG_PATH"
+}
 
-# -----------------------------------------------------------------------------
-# 6. Done
-# -----------------------------------------------------------------------------
-
-echo "==> Done"
-ls -lh "$DMG_PATH"
+main "$@"
