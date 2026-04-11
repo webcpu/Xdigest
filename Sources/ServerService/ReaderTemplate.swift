@@ -524,22 +524,58 @@ function showPendingBanner() {
   banner.onclick = applyPendingDigest;
 }
 
-// Reveal the pending digest: replace the timeline DOM, hide banner,
-// scroll to top. Do NOT touch the server reading position -- the user
-// has only just REVEALED the new posts; they haven't read past them.
-// Natural scrolling will update the position via existing handlers.
-function applyPendingDigest() {
-  if (pendingHTML === null) return;
+// DOM swap helper: replace the timeline with `html`, hide the banner,
+// and suppress scroll-sync during the swap. Callers decide what to do
+// about scroll position afterwards.
+function swapToHTML(html) {
   inProgrammaticScroll++;
-  tl.innerHTML = pendingHTML;
-  pendingHTML = null;
-  pendingNewCount = 0;
+  tl.innerHTML = html;
   enhanceTimeline();
   banner.style.display = 'none';
-  window.scrollTo(0, 0);
   requestAnimationFrame(function() {
     requestAnimationFrame(function() { inProgrammaticScroll--; });
   });
+}
+
+// Local reveal: user clicked the banner on THIS device. Swap in the
+// pending HTML, scroll to top, and POST the new top as the server
+// position so other devices see the reveal and sync their own DOM.
+function applyPendingDigest() {
+  if (pendingHTML === null) return;
+  var html = pendingHTML;
+  pendingHTML = null;
+  pendingNewCount = 0;
+  swapToHTML(html);
+  window.scrollTo(0, 0);
+  var ids = extractPostIds();
+  if (ids.length > 0) {
+    var anchor = { postId: ids[0], fraction: 0 };
+    postAnchor(anchor);
+    // Update dedup key so the next scroll handler doesn't re-POST
+    // the same anchor via sendAnchor().
+    lastSentKey = anchorKey(anchor);
+  }
+}
+
+// Remote-reveal fallback: another client revealed but we don't have
+// pendingHTML cached (the mtime-change SSE event hadn't arrived, or its
+// fetch failed). Fetch fresh and apply immediately.
+//
+// Bumping `pendingFetchSeq` invalidates any in-flight `fetchPendingDigest`
+// so its late-arriving response doesn't spuriously re-show the banner
+// after we've already revealed.
+function fetchAndApply() {
+  pendingFetchSeq++;
+  fetch('/api/digest').then(function(r) { return r.text(); }).then(function(html) {
+    pendingHTML = null;
+    pendingNewCount = 0;
+    swapToHTML(html);
+    // After the DOM swap, match the server's scroll position if the
+    // user is idle. Active users stay where they are.
+    if (serverPosition && !isUserActive() && !viewportMatchesServer()) {
+      applyScrollThrottled(serverPosition, serverFraction);
+    }
+  }).catch(function() {});
 }
 
 // Apply video thumbnails, show-more, image lightbox to the timeline.
@@ -724,6 +760,30 @@ function applyServerState(d) {
     // previous mtime so a failed fetch can roll back and retrigger.
     fetchPendingDigest(previousMtime);
     return;
+  }
+
+  // Remote reveal: if the server's position points to a post we don't
+  // have in our DOM, another client has revealed new content. Apply
+  // pendingHTML if we have it cached, otherwise fetch and apply.
+  //
+  // Assumption: "serverPosition not in DOM" unambiguously means "some
+  // other client revealed content we don't yet have locally". Also
+  // covers SSE reorder (mtime event arrives after its position event)
+  // and day-rollover truncation -- both resolve by reloading the
+  // current digest, which is the right thing. A server bug writing a
+  // garbage post ID would loop here, but the server is the single
+  // writer and only mutates via updatePosition / updateDigest.
+  if (serverPosition && !postById(serverPosition)) {
+    if (pendingHTML !== null) {
+      var html = pendingHTML;
+      pendingHTML = null;
+      pendingNewCount = 0;
+      swapToHTML(html);
+      // Fall through to updateBanner + scroll sync below.
+    } else {
+      fetchAndApply();
+      return;
+    }
   }
 
   updateBanner();
