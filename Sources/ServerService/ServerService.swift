@@ -218,7 +218,31 @@ public func startServer(
         onPositionChange: onPositionChange,
         onDigestChange: onDigestChange
     )
+    // Force IPv4 binding. Without this override, Network framework on
+    // macOS creates an IPv6-only socket (IPV6_V6ONLY=1 by default), so
+    // IPv4 clients like Tailscale (100.x.x.x CGNAT) get stuck in
+    // SYN_SENT and time out. localhost (::1) and mDNS over IPv6 still
+    // work in that degenerate state, which is why the bug hides on the
+    // local machine until you try to reach the reader from another
+    // device over IPv4.
+    //
+    // IPv4-only is fine for every access path the app actually uses:
+    // - localhost: curl/Safari happy-eyeballs 127.0.0.1 when ::1 fails
+    // - mDNS (`<host>.local`): resolves to BOTH IPv4 and IPv6, client
+    //   picks IPv4 when the server is IPv4-only
+    // - LAN IP (e.g. 10.0.x.x): native IPv4
+    // - Tailscale (100.x.x.x): native IPv4 CGNAT
+    //
+    // We'd prefer dual-stack, but Network framework doesn't expose
+    // `IPV6_V6ONLY=0` on listeners, and running two parallel listeners
+    // (one per family) fails because setting `requiredLocalEndpoint`
+    // in either configuration causes the second bind to fail with
+    // "already in use". IPv4-only is the only knob that produces a
+    // working Tailscale path.
     let params = NWParameters.tcp
+    if let ipOpts = params.defaultProtocolStack.internetProtocol as? NWProtocolIP.Options {
+        ipOpts.version = .v4
+    }
     let listener: NWListener
     do {
         listener = try NWListener(using: params, on: nwPort)
