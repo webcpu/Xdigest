@@ -43,9 +43,13 @@ let package = Package(
             dependencies: ["XdigestCore", "BirdService", "ScorerService", "DigestService"],
             path: "Sources/Pipeline"
         ),
+        .target(
+            name: "Updater",
+            path: "Sources/Updater"
+        ),
         .executableTarget(
             name: "XdigestApp",
-            dependencies: ["XdigestCore", "BirdService", "ScorerService", "DigestService", "ServerService", "Pipeline"],
+            dependencies: ["XdigestCore", "BirdService", "ScorerService", "DigestService", "ServerService", "Pipeline", "Updater"],
             path: "Sources/XdigestApp",
             exclude: ["Info.plist"],
             linkerSettings: [
@@ -86,6 +90,11 @@ let package = Package(
             name: "PipelineTests",
             dependencies: ["Pipeline", "XdigestCore"],
             path: "Tests/PipelineTests"
+        ),
+        .testTarget(
+            name: "UpdaterTests",
+            dependencies: ["Updater"],
+            path: "Tests/UpdaterTests"
         ),
     ]
 )

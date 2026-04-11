@@ -2,6 +2,7 @@ import AppKit
 import SwiftUI
 import Pipeline
 import ServerService
+import Updater
 import XdigestCore
 
 private let serverPort = 8408
@@ -241,6 +242,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ))
 
         menu.addItem(.separator())
+        menu.addItem(NSMenuItem(
+            title: "Check for Updates...",
+            action: #selector(checkForUpdatesFromMenu),
+            keyEquivalent: ""
+        ))
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(quit), keyEquivalent: "q"))
         statusItem?.menu = menu
     }
@@ -288,6 +294,146 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.terminate(nil)
     }
 
+    // MARK: - Update Check
+    //
+    // The app checks GitHub for a newer release. Auto-check runs once per
+    // 24h on launch and only bothers the user if there's actually an
+    // update. The menu item lets the user force a check -- that path
+    // always shows feedback (up-to-date, no releases, or error).
+
+    private static let lastCheckDefaultsKey = "com.xdigest.app.lastUpdateCheck"
+    private static let autoCheckInterval: TimeInterval = 24 * 3600
+    private static let xdigestRepo = GitHubRepo(owner: "webcpu", name: "Xdigest")
+    private static let userAgent = "Xdigest"
+
+    /// Guard against stacked alerts when a menu click lands while an
+    /// auto-check is still in flight, or two rapid menu clicks.
+    private var isCheckingForUpdate = false
+
+    /// The app's current version. Returns nil if there is no bundled
+    /// Info.plist -- typically a dev build launched via dev.sh from
+    /// .build/debug/Xdigest. Reading Info.plist is an app concern,
+    /// not an Updater-module concern.
+    private func currentAppVersion() -> String? {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+    }
+
+    @objc private func checkForUpdatesFromMenu() {
+        guard !isCheckingForUpdate else { return }
+        guard let version = currentAppVersion() else {
+            // Dev build -- tell the user rather than silently failing.
+            let alert = NSAlert()
+            alert.messageText = "Dev build"
+            alert.informativeText = "This build has no version info in Info.plist."
+            NSApp.activate(ignoringOtherApps: true)
+            alert.runModal()
+            return
+        }
+        isCheckingForUpdate = true
+        Task { @MainActor in
+            defer { self.isCheckingForUpdate = false }
+            let result = await checkForUpdate(
+                repo: Self.xdigestRepo,
+                userAgent: Self.userAgent,
+                currentVersion: version
+            )
+            self.presentUpdateResult(result, silent: false, currentVersion: version)
+            self.recordCheckTimestamp(for: result)
+        }
+    }
+
+    /// Silent auto-check: runs at most once per `autoCheckInterval`. Only
+    /// surfaces UI when there's actually an update. Skips entirely when
+    /// the app has no bundled Info.plist (dev builds launched via
+    /// dev.sh run from .build/debug/Xdigest).
+    private func autoCheckForUpdates() {
+        guard let version = currentAppVersion() else { return }
+        guard !isCheckingForUpdate else { return }
+        let last = UserDefaults.standard.object(forKey: Self.lastCheckDefaultsKey) as? Date ?? .distantPast
+        guard Date().timeIntervalSince(last) > Self.autoCheckInterval else { return }
+
+        isCheckingForUpdate = true
+        Task { @MainActor in
+            defer { self.isCheckingForUpdate = false }
+            let result = await checkForUpdate(
+                repo: Self.xdigestRepo,
+                userAgent: Self.userAgent,
+                currentVersion: version
+            )
+            self.presentUpdateResult(result, silent: true, currentVersion: version)
+            self.recordCheckTimestamp(for: result)
+        }
+    }
+
+    /// Persists the check timestamp, but only for NON-error results.
+    /// A transient network failure shouldn't lock the user out of
+    /// auto-checks for the next 24 hours.
+    private func recordCheckTimestamp(for result: UpdateCheckResult) {
+        switch result {
+        case .networkError:
+            return
+        case .updateAvailable, .upToDate, .noReleases:
+            UserDefaults.standard.set(Date(), forKey: Self.lastCheckDefaultsKey)
+        }
+    }
+
+    /// Routes an UpdateCheckResult to the right UI. `silent=true` hides
+    /// "up to date", "no releases", and "network error" -- they only
+    /// matter when the user explicitly asked.
+    private func presentUpdateResult(_ result: UpdateCheckResult, silent: Bool, currentVersion: String) {
+        switch result {
+        case .updateAvailable(let release):
+            showUpdateAlert(release: release, currentVersion: currentVersion)
+        case .upToDate:
+            guard !silent else { return }
+            let alert = NSAlert()
+            alert.messageText = "Xdigest is up to date"
+            alert.informativeText = "You're on version \(currentVersion)."
+            NSApp.activate(ignoringOtherApps: true)
+            alert.runModal()
+        case .noReleases:
+            guard !silent else { return }
+            let alert = NSAlert()
+            alert.messageText = "No releases published"
+            alert.informativeText = "Xdigest hasn't published any releases on GitHub yet."
+            NSApp.activate(ignoringOtherApps: true)
+            alert.runModal()
+        case .networkError(let message):
+            guard !silent else { return }
+            let alert = NSAlert()
+            alert.messageText = "Couldn't check for updates"
+            alert.informativeText = message
+            NSApp.activate(ignoringOtherApps: true)
+            alert.runModal()
+        }
+    }
+
+    private func showUpdateAlert(release: GitHubRelease, currentVersion: String) {
+        let alert = NSAlert()
+        alert.messageText = "Update available: \(release.name)"
+        alert.informativeText = "You have version \(currentVersion). The latest is \(release.tagName)."
+        alert.addButton(withTitle: "Download")
+        alert.addButton(withTitle: "Release Notes")
+        alert.addButton(withTitle: "Later")
+        NSApp.activate(ignoringOtherApps: true)
+
+        switch alert.runModal() {
+        case .alertFirstButtonReturn:
+            // Prefer direct DMG download; fall back to the release page
+            // if no DMG asset is attached.
+            let urlString = release.dmgUrl ?? release.htmlUrl
+            if let url = URL(string: urlString) {
+                NSWorkspace.shared.open(url)
+            }
+        case .alertSecondButtonReturn:
+            if let url = URL(string: release.htmlUrl) {
+                NSWorkspace.shared.open(url)
+            }
+        default:
+            break
+        }
+    }
+
     // MARK: - Server
 
     private func startServer() {
@@ -313,6 +459,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self.log("[App] Server started on port \(serverPort)")
                 self.checkFirewall()
                 self.runAutoOpenFlow()
+                self.autoCheckForUpdates()
             } catch {
                 self.log("[App] Server failed: \(error)")
                 showNotification(title: "Xdigest Error", body: "Server: \(error.localizedDescription)")
