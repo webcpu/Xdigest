@@ -79,7 +79,6 @@ BirdService -> ScorerService -> DigestService -> ServerService -> Browser
 - **DigestService** -- assembles scored posts into a digest with dedup
 - **ServerService** -- HTTP server with HTML reader and video proxy
 - **Pipeline** -- orchestrates the flow with retry and caching
-- **Updater** -- checks GitHub Releases for newer versions (reusable as a standalone SPM target)
 
 ## Privacy
 

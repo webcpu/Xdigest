@@ -13,6 +13,13 @@ let package = Package(
     products: [
         .executable(name: "Xdigest", targets: ["XdigestApp"]),
     ],
+    dependencies: [
+        // Sparkle owns the full update lifecycle: download, signature
+        // verification, in-place replacement, and relaunch. The appcast
+        // URL and EdDSA public key live in Info.plist; release.sh
+        // publishes new versions by updating appcast.xml on origin/main.
+        .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.0.0"),
+    ],
     targets: [
         .target(
             name: "XdigestCore",
@@ -43,13 +50,13 @@ let package = Package(
             dependencies: ["XdigestCore", "BirdService", "ScorerService", "DigestService"],
             path: "Sources/Pipeline"
         ),
-        .target(
-            name: "Updater",
-            path: "Sources/Updater"
-        ),
         .executableTarget(
             name: "XdigestApp",
-            dependencies: ["XdigestCore", "BirdService", "ScorerService", "DigestService", "ServerService", "Pipeline", "Updater"],
+            dependencies: [
+                "XdigestCore", "BirdService", "ScorerService", "DigestService",
+                "ServerService", "Pipeline",
+                .product(name: "Sparkle", package: "Sparkle"),
+            ],
             path: "Sources/XdigestApp",
             exclude: ["Info.plist"],
             linkerSettings: [
@@ -90,11 +97,6 @@ let package = Package(
             name: "PipelineTests",
             dependencies: ["Pipeline", "XdigestCore"],
             path: "Tests/PipelineTests"
-        ),
-        .testTarget(
-            name: "UpdaterTests",
-            dependencies: ["Updater"],
-            path: "Tests/UpdaterTests"
         ),
     ]
 )

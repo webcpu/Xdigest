@@ -168,6 +168,15 @@ command -v gh >/dev/null 2>&1 \
 gh auth status >/dev/null 2>&1 \
     || die "gh CLI not authenticated (run: gh auth login)"
 
+# sign_update is Sparkle's EdDSA signer. It reads the private signing key
+# from the macOS Keychain (generated once via generate_keys) and writes an
+# EdDSA signature + file length to stdout in the exact attribute form
+# that Sparkle expects inside an appcast <enclosure> element. Sparkle 2.x
+# refuses to install downloads without a valid edSignature, so this is
+# load-bearing for every release.
+command -v sign_update >/dev/null 2>&1 \
+    || die "sign_update not found. Install: mkdir -p ~/.local/bin && cd ~/.local && curl -sL https://github.com/sparkle-project/Sparkle/releases/download/2.9.1/Sparkle-2.9.1.tar.xz | tar xJ bin/sign_update bin/generate_keys"
+
 if git rev-parse --verify "$TAG" >/dev/null 2>&1; then
     die "tag $TAG already exists locally"
 fi
@@ -225,6 +234,28 @@ log "Building notarized DMG (this takes 3-8 minutes including notarization)"
 [ -f "$DMG_PATH" ] || die "make-dmg.sh did not produce $DMG_PATH"
 
 # -----------------------------------------------------------------------------
+# EdDSA-sign the DMG for Sparkle
+# -----------------------------------------------------------------------------
+#
+# Must run AFTER make-dmg.sh because stapling the notarization ticket
+# modifies the DMG bytes, and the EdDSA signature must cover the exact
+# bytes that users download.
+#
+# Must run BEFORE appcast.xml is written because sign_update's output is
+# what we embed in the <enclosure> element. The output format is a
+# ready-to-paste pair of XML attributes:
+#   sparkle:edSignature="<base64>" length="<bytes>"
+# so we capture it into a variable and drop it directly into the heredoc.
+#
+# No Keychain prompt on subsequent runs once the user has clicked
+# "Always Allow" in the first Keychain dialog.
+
+log "Signing DMG for Sparkle"
+SIGNATURE_ATTRS=$(sign_update "$DMG_PATH")
+[ -n "$SIGNATURE_ATTRS" ] || die "sign_update produced empty output for $DMG_PATH"
+printf '    %s\n' "$SIGNATURE_ATTRS"
+
+# -----------------------------------------------------------------------------
 # Write appcast.xml (Sparkle-compatible schema, single <item> for latest)
 # -----------------------------------------------------------------------------
 #
@@ -236,7 +267,6 @@ log "Building notarized DMG (this takes 3-8 minutes including notarization)"
 log "Writing appcast.xml"
 APPCAST_DIRTY=1
 PUB_DATE=$(date -u +"%a, %d %b %Y %H:%M:%S +0000")
-DMG_SIZE=$(stat -f%z "$DMG_PATH")
 cat > "$APPCAST" <<XML
 <?xml version="1.0" encoding="utf-8"?>
 <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
@@ -254,7 +284,7 @@ cat > "$APPCAST" <<XML
         url="https://github.com/$REPO_SLUG/releases/download/v$VERSION/Xdigest.dmg"
         sparkle:shortVersionString="$VERSION"
         sparkle:version="$BUILD"
-        length="$DMG_SIZE"
+        $SIGNATURE_ATTRS
         type="application/octet-stream"/>
     </item>
   </channel>

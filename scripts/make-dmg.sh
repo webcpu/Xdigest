@@ -23,7 +23,6 @@ set -euo pipefail
 # -----------------------------------------------------------------------------
 
 APP_NAME="Xdigest"
-BUNDLE_ID="com.xdigest.app"
 NOTARY_PROFILE="${XDIGEST_NOTARY_PROFILE:-xdigest-notary}"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -34,11 +33,6 @@ SOURCE_INFO_PLIST="$PROJECT_DIR/Sources/XdigestApp/Info.plist"
 APP_BUNDLE="$DIST_DIR/$APP_NAME.app"
 APP_ZIP="$DIST_DIR/$APP_NAME.zip"
 DMG_PATH="$DIST_DIR/$APP_NAME.dmg"
-
-# Single source of truth: the committed Info.plist holds both values.
-# `release.sh` updates this file; make-dmg.sh just reads it.
-VERSION=$(plutil -extract CFBundleShortVersionString raw -o - "$SOURCE_INFO_PLIST")
-BUILD=$(plutil -extract CFBundleVersion raw -o - "$SOURCE_INFO_PLIST")
 
 NOTARIZE=1
 
@@ -76,44 +70,44 @@ build_icon() {
         || die "make-icon.sh did not produce Resources/Xdigest.icns"
 }
 
-write_info_plist() {
-    cat << PLIST
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>CFBundleExecutable</key>
-    <string>$APP_NAME</string>
-    <key>CFBundleIconFile</key>
-    <string>Xdigest</string>
-    <key>CFBundleIdentifier</key>
-    <string>$BUNDLE_ID</string>
-    <key>CFBundleName</key>
-    <string>$APP_NAME</string>
-    <key>CFBundleShortVersionString</key>
-    <string>$VERSION</string>
-    <key>CFBundleVersion</key>
-    <string>$BUILD</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-    <key>LSMinimumSystemVersion</key>
-    <string>15.0</string>
-    <key>LSUIElement</key>
-    <true/>
-    <key>NSHighResolutionCapable</key>
-    <true/>
-</dict>
-</plist>
-PLIST
-}
-
 assemble_bundle() {
     rm -rf "$DIST_DIR"
     mkdir -p "$APP_BUNDLE/Contents/MacOS"
     mkdir -p "$APP_BUNDLE/Contents/Resources"
     cp "$BUILD_DIR/$APP_NAME" "$APP_BUNDLE/Contents/MacOS/$APP_NAME"
     cp "$PROJECT_DIR/Resources/Xdigest.icns" "$APP_BUNDLE/Contents/Resources/Xdigest.icns"
-    write_info_plist > "$APP_BUNDLE/Contents/Info.plist"
+    # Single source of truth: copy the same Info.plist that swift build
+    # inlines into the binary via -sectcreate. Two plists in tension was
+    # the cause of a Sparkle outage -- bundle Contents/Info.plist had no
+    # SUFeedURL, so the running app couldn't find the appcast even
+    # though `swift run` (which uses the linker-section plist) worked
+    # fine. Don't reintroduce the divergence.
+    #
+    # release.sh has already updated CFBundleShortVersionString and
+    # CFBundleVersion in the source plist via plutil before we run, so
+    # the copy carries the bumped values automatically.
+    cp "$SOURCE_INFO_PLIST" "$APP_BUNDLE/Contents/Info.plist"
+}
+
+# Copies Sparkle.framework into the conventional Contents/Frameworks/
+# location and teaches the binary where to find it. swift build places
+# the framework next to the executable and sets rpath to @loader_path,
+# which works for `swift run` but not for the .app layout (binary in
+# Contents/MacOS/, framework in Contents/Frameworks/). Fix: copy the
+# framework, then add @loader_path/../Frameworks to the binary's rpaths.
+#
+# Must run BEFORE signing -- install_name_tool mutates the binary, and
+# any post-sign modification invalidates the signature.
+copy_frameworks() {
+    local src="$BUILD_DIR/Sparkle.framework"
+    local dest="$APP_BUNDLE/Contents/Frameworks"
+    [ -d "$src" ] || die "Sparkle.framework not at $src (did swift build -c release run?)"
+    mkdir -p "$dest"
+    # -Rp preserves symlinks (Versions/Current -> B) and xattrs that
+    # codesign needs.
+    cp -Rp "$src" "$dest/"
+    install_name_tool -add_rpath @loader_path/../Frameworks \
+        "$APP_BUNDLE/Contents/MacOS/$APP_NAME" 2>&1 | detail
 }
 
 verify_bundle() {
@@ -123,7 +117,29 @@ verify_bundle() {
         || die "invalid Info.plist"
     [ -f "$APP_BUNDLE/Contents/Resources/Xdigest.icns" ] \
         || die "icon missing from bundle at Contents/Resources/Xdigest.icns"
-    printf '    binary + Info.plist + icon present\n'
+    [ -d "$APP_BUNDLE/Contents/Frameworks/Sparkle.framework" ] \
+        || die "Sparkle.framework missing from bundle at Contents/Frameworks/"
+    printf '    binary + Info.plist + icon + Sparkle.framework present\n'
+}
+
+# Signs Sparkle.framework's nested binaries strictly innermost-first.
+# codesign requires every inner signature to be valid before the outer
+# container is signed, so the order here is load-bearing: deepest
+# executables first, then their enclosing bundles, then the framework.
+# We do this explicitly rather than relying on `codesign --deep`, which
+# Apple has deprecated and which notarytool has started flagging.
+sign_sparkle_framework() {
+    local fw="$APP_BUNDLE/Contents/Frameworks/Sparkle.framework"
+    local v="$fw/Versions/B"
+    "$SCRIPT_DIR/sign.sh" "$v/XPCServices/Downloader.xpc/Contents/MacOS/Downloader" 2>&1 | detail
+    "$SCRIPT_DIR/sign.sh" "$v/XPCServices/Downloader.xpc" 2>&1 | detail
+    "$SCRIPT_DIR/sign.sh" "$v/XPCServices/Installer.xpc/Contents/MacOS/Installer" 2>&1 | detail
+    "$SCRIPT_DIR/sign.sh" "$v/XPCServices/Installer.xpc" 2>&1 | detail
+    "$SCRIPT_DIR/sign.sh" "$v/Updater.app/Contents/MacOS/Updater" 2>&1 | detail
+    "$SCRIPT_DIR/sign.sh" "$v/Updater.app" 2>&1 | detail
+    "$SCRIPT_DIR/sign.sh" "$v/Autoupdate" 2>&1 | detail
+    "$SCRIPT_DIR/sign.sh" "$v/Sparkle" 2>&1 | detail
+    "$SCRIPT_DIR/sign.sh" "$fw" 2>&1 | detail
 }
 
 sign_binary() {
@@ -238,14 +254,16 @@ assess_notarized_dmg() {
 main() {
     parse_args "$@"
 
-    log "Building release";        build_release
-    log "Building app icon";       build_icon
-    log "Creating app bundle";     assemble_bundle
-    log "Verifying bundle layout"; verify_bundle
-    log "Signing binary";          sign_binary
-    log "Signing bundle";          sign_bundle
-    log "Verifying signature";     verify_signature
-    log "Gatekeeper assessment";   assess_gatekeeper
+    log "Building release";            build_release
+    log "Building app icon";           build_icon
+    log "Creating app bundle";         assemble_bundle
+    log "Copying Sparkle.framework";   copy_frameworks
+    log "Verifying bundle layout";     verify_bundle
+    log "Signing Sparkle.framework";   sign_sparkle_framework
+    log "Signing binary";              sign_binary
+    log "Signing bundle";              sign_bundle
+    log "Verifying signature";         verify_signature
+    log "Gatekeeper assessment";       assess_gatekeeper
 
     # Notarize the .app FIRST so the ticket gets stapled into the bundle
     # before it's wrapped in a DMG. Users who extract the .app from the DMG
