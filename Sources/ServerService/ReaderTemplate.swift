@@ -209,17 +209,14 @@ function generateMore() {
   var btn = document.getElementById('fab-gen');
   btn.classList.add('loading');
   btn.title = 'Generating...';
+  // Kick off server-side generation. The banner is NOT managed here --
+  // the server's SSE broadcast triggers fetchPendingDigest which owns
+  // the banner. This endpoint response only tells us the spinner can
+  // stop; the banner appears via the SSE path.
   fetch('/api/generate', {method: 'POST'}).then(function(r) { return r.json(); }).then(function(d) {
     btn.classList.remove('loading');
     btn.title = 'Generate more';
-    if (d.picks > 0) {
-      banner.textContent = d.picks + ' new post' + (d.picks > 1 ? 's' : '');
-      banner.style.display = 'block';
-      banner.onclick = function() {
-        banner.textContent = 'Loading...';
-        loadNewPosts(d.picks);
-      };
-    } else {
+    if (d.picks === 0) {
       btn.title = 'No new picks';
       setTimeout(function() { btn.title = 'Generate more'; }, 3000);
     }
@@ -428,8 +425,24 @@ function scrollToAnchor(postId, fraction) {
   });
 }
 
-// Banner visibility: show if there are posts above lastSeenPostId.
+// --- Pending digest state ---
+//
+// When the server generates new posts, we FETCH the new digest HTML
+// but do NOT apply it to the DOM until the user clicks the banner.
+// This keeps the reader's "what's visible" consistent with the user's
+// intent: new posts appear only when explicitly requested.
+var pendingHTML = null;
+var pendingNewCount = 0;
+// Monotonic fetch sequence token. Incremented per request. Late-arriving
+// responses from stale fetches are dropped by comparing against this.
+var pendingFetchSeq = 0;
+
+// Banner visibility for the "catch up to your reading position" case
+// (user loaded the page mid-read, needs to scroll to newest).
+// If there's pendingHTML, the pending flow owns the banner -- bail out
+// so we don't clobber it.
 function updateBanner() {
+  if (pendingHTML !== null) return;
   if (!serverPosition) {
     banner.style.display = 'none';
     return;
@@ -442,37 +455,90 @@ function updateBanner() {
     banner.onclick = function() {
       banner.style.display = 'none';
       window.scrollTo(0, 0);
-      // Update position to the newest post
       var newest = postIds[0];
-      if (newest) sendPosition(newest);
+      if (newest) postAnchor({ postId: newest, fraction: 0 });
     };
   } else {
     banner.style.display = 'none';
   }
 }
 
-// Replace the timeline DOM with fresh HTML from /api/digest.
-// Preserves the user's current scroll position -- they stay where they
-// were reading, and the banner tells them new posts are available.
-function reloadDigest() {
-  var savedAnchor = findReadingAnchor();
-  inProgrammaticScroll++;
-  return fetch('/api/digest').then(function(r) { return r.text(); }).then(function(html) {
-    tl.innerHTML = html;
-    enhanceTimeline();
-    updateBanner();
-    if (savedAnchor.postId) {
-      scrollToAnchor(savedAnchor.postId, savedAnchor.fraction);
-    } else if (serverPosition && !isUserActive()) {
-      scrollToAnchor(serverPosition, serverFraction);
+// Fetch the new digest HTML into `pendingHTML` WITHOUT applying it to
+// the DOM. Show a banner with the new post count. User clicks the
+// banner to reveal the posts via `applyPendingDigest`.
+//
+// If a newer fetchPendingDigest() starts while this one is still in
+// flight, the stale response is dropped via `pendingFetchSeq`.
+// On error, `serverMtime` is reset so the next SSE event retriggers.
+function fetchPendingDigest(previousMtime) {
+  pendingFetchSeq++;
+  var mySeq = pendingFetchSeq;
+  fetch('/api/digest').then(function(r) { return r.text(); }).then(function(html) {
+    if (mySeq !== pendingFetchSeq) return;  // stale response; newer fetch in flight
+
+    // Count how many posts are new: find the first existing post ID in
+    // the new HTML; everything before it is new. If the first existing
+    // post ID no longer exists in the new HTML (server truncated or
+    // reordered, e.g. a new day's digest), treat it as a full reload.
+    var oldIds = extractPostIds();
+    var tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    var newIds = Array.prototype.map.call(
+      tmp.querySelectorAll('div[data-post-id]'),
+      function(el) { return el.getAttribute('data-post-id'); }
+    );
+    var newCount;
+    if (oldIds.length === 0) {
+      newCount = newIds.length;
+    } else {
+      var anchorIdx = newIds.indexOf(oldIds[0]);
+      newCount = anchorIdx >= 0 ? anchorIdx : newIds.length;
     }
-    requestAnimationFrame(function() {
-      requestAnimationFrame(function() {
-        inProgrammaticScroll--;
-      });
-    });
+
+    pendingHTML = html;
+    pendingNewCount = newCount;
+    showPendingBanner();
   }).catch(function() {
-    inProgrammaticScroll--;
+    if (mySeq !== pendingFetchSeq) return;  // newer fetch is active
+    // Reset mtime so the next SSE event retriggers the fetch. Without
+    // this, absorbServerState's update leaves us stuck -- next SSE will
+    // see "no change" and skip.
+    serverMtime = previousMtime;
+  });
+}
+
+// Show the pending banner with the current count. Click reveals the
+// pending HTML.
+function showPendingBanner() {
+  if (pendingNewCount <= 0) {
+    // Nothing actually new (e.g. server broadcast fired but content is
+    // unchanged). Drop the pending state and let updateBanner decide
+    // whether the "catch up to your position" banner should show.
+    pendingHTML = null;
+    banner.style.display = 'none';
+    updateBanner();
+    return;
+  }
+  banner.textContent = pendingNewCount + ' new post' + (pendingNewCount > 1 ? 's' : '');
+  banner.style.display = 'block';
+  banner.onclick = applyPendingDigest;
+}
+
+// Reveal the pending digest: replace the timeline DOM, hide banner,
+// scroll to top. Do NOT touch the server reading position -- the user
+// has only just REVEALED the new posts; they haven't read past them.
+// Natural scrolling will update the position via existing handlers.
+function applyPendingDigest() {
+  if (pendingHTML === null) return;
+  inProgrammaticScroll++;
+  tl.innerHTML = pendingHTML;
+  pendingHTML = null;
+  pendingNewCount = 0;
+  enhanceTimeline();
+  banner.style.display = 'none';
+  window.scrollTo(0, 0);
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() { inProgrammaticScroll--; });
   });
 }
 
@@ -649,10 +715,14 @@ function applyServerState(d) {
   var mtimeChanged = (d.mtime !== 0 && d.mtime !== serverMtime);
   if (!isNewerState(d, mtimeChanged)) return;
 
+  var previousMtime = serverMtime;
   absorbServerState(d);
 
   if (mtimeChanged) {
-    reloadDigest();
+    // New posts exist on the server. Fetch the new HTML and stash it
+    // as pendingHTML; the user clicks the banner to reveal. Pass the
+    // previous mtime so a failed fetch can roll back and retrigger.
+    fetchPendingDigest(previousMtime);
     return;
   }
 
