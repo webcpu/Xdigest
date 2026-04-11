@@ -23,16 +23,29 @@ struct SetupView: View {
                             .frame(width: 22, height: 22)
                             .background(Circle().fill(.orange))
 
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: 6) {
                             Text(issue.title)
                                 .font(.system(size: 14, weight: .semibold))
                             Text(issue.description)
                                 .font(.system(size: 12))
                                 .foregroundStyle(.secondary)
-                            Text(issue.action)
-                                .font(.system(size: 12, weight: .medium, design: .monospaced))
-                                .foregroundStyle(.blue)
-                                .textSelection(.enabled)
+                                .fixedSize(horizontal: false, vertical: true)
+                            if let urlString = issue.actionUrl, let url = URL(string: urlString) {
+                                Button(action: { openInSafari(url) }) {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "arrow.up.forward.square")
+                                        Text(issue.action)
+                                    }
+                                    .font(.system(size: 12, weight: .medium))
+                                }
+                                .buttonStyle(.link)
+                                .padding(.top, 2)
+                            } else {
+                                Text(issue.action)
+                                    .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                    .foregroundStyle(.blue)
+                                    .textSelection(.enabled)
+                            }
                         }
                     }
                 }
@@ -52,6 +65,20 @@ struct SetupView: View {
         .padding(24)
         .frame(width: 440)
     }
+}
+
+/// Opens a web URL specifically in Safari, not a web app or other default handler.
+/// For non-web URLs (like x-apple.systempreferences:), falls back to the default handler.
+private func openInSafari(_ url: URL) {
+    let scheme = url.scheme?.lowercased() ?? ""
+    guard scheme == "http" || scheme == "https" else {
+        NSWorkspace.shared.open(url)
+        return
+    }
+
+    let safariURL = URL(fileURLWithPath: "/Applications/Safari.app")
+    let config = NSWorkspace.OpenConfiguration()
+    NSWorkspace.shared.open([url], withApplicationAt: safariURL, configuration: config)
 }
 
 @MainActor

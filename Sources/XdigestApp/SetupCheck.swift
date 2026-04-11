@@ -7,6 +7,14 @@ struct SetupIssue: Sendable {
     let title: String
     let description: String
     let action: String
+    let actionUrl: String?
+
+    init(title: String, description: String, action: String, actionUrl: String? = nil) {
+        self.title = title
+        self.description = description
+        self.action = action
+        self.actionUrl = actionUrl
+    }
 }
 
 /// Checks all requirements and returns any issues found.
@@ -27,7 +35,8 @@ func checkSetup() -> [SetupIssue] {
         issues.append(SetupIssue(
             title: "Claude Code not installed",
             description: "Xdigest uses Claude to score posts against your taste. You need an active Claude Code subscription (not API).",
-            action: "Install from: https://claude.ai/code"
+            action: "Install Claude Code",
+            actionUrl: "https://claude.ai/code"
         ))
     }
 
@@ -36,8 +45,9 @@ func checkSetup() -> [SetupIssue] {
         if !canBirdAccessX() {
             issues.append(SetupIssue(
                 title: "Not logged into X",
-                description: "bird reads your browser cookies to access X. You need to be logged into x.com in Safari, Chrome, or Firefox.",
-                action: "Open a browser, go to x.com, and log in."
+                description: "bird reads your browser cookies to access X. Log into x.com in Safari, Chrome, or Firefox (not a web app added to the dock -- those have isolated cookies).",
+                action: "Open x.com in Safari",
+                actionUrl: "https://x.com/login"
             ))
         }
     }
@@ -69,8 +79,9 @@ func checkFirewallAccess(port: Int) -> SetupIssue? {
     if !reachable {
         return SetupIssue(
             title: "Firewall is blocking Xdigest",
-            description: "Your iPhone and iPad can't connect to the reader. macOS blocked incoming connections for Xdigest.",
-            action: "Go to System Settings > Network > Firewall > Options, and set Xdigest to \"Allow incoming connections\"."
+            description: "Your iPhone and iPad can't connect to the reader. macOS blocked incoming connections for Xdigest. Set Xdigest to \"Allow incoming connections\" in Firewall Options.",
+            action: "Open Firewall Settings",
+            actionUrl: "x-apple.systempreferences:com.apple.Network-Settings.extension?Firewall"
         )
     }
     return nil
