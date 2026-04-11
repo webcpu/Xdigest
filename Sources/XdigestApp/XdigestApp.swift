@@ -157,6 +157,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Actions
 
     @objc private func generateDigest() {
+        performGeneration(thenOpen: false)
+    }
+
+    /// Runs the pipeline, updates server state, and optionally opens the
+    /// reader on success. Shared by the menu action and the auto-open flow.
+    private func performGeneration(thenOpen: Bool) {
         guard !isGenerating else { return }
         isGenerating = true
         rebuildMenu()
@@ -169,11 +175,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 if let handle = serverHandle {
                     updateDigest(handle, digest: outcome.digest)
                 }
-                showNotification(
-                    title: "Xdigest",
-                    body: "\(outcome.digest.sections.first?.posts.count ?? 0) new posts"
-                )
+                let picks = outcome.digest.sections.first?.posts.count ?? 0
+                showNotification(title: "Xdigest", body: "\(picks) new posts")
+                if thenOpen { openReader() }
             } catch {
+                // On failure, show the error but do NOT open the reader --
+                // the user needs to see what went wrong.
                 showNotification(title: "Xdigest Error", body: error.localizedDescription)
             }
             isGenerating = false
@@ -217,11 +224,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 )
                 self.log("[App] Server started on port \(serverPort)")
                 self.checkFirewall()
+                self.runAutoOpenFlow()
             } catch {
                 self.log("[App] Server failed: \(error)")
                 showNotification(title: "Xdigest Error", body: "Server: \(error.localizedDescription)")
             }
         }
+    }
+
+    // MARK: - Auto-Open Flow
+    //
+    // Runs once the server is up (both on first launch and after onboarding
+    // completes). If today's digest already has posts, just open the reader.
+    // Otherwise generate first, then open. Launching the app == reading
+    // today's digest.
+    //
+    // Why post-count, not file-existence: the spec is literal ("if there
+    // are any today's posts"). A digest file with zero picks typically
+    // means a transient scorer miss or slow X response -- retrying on the
+    // next launch is the behavior the user wants. If your generator
+    // consistently produces zero picks, that's a separate bug to chase in
+    // the scorer/bird stack, not a reason to cache empty digests.
+
+    private func runAutoOpenFlow() {
+        if let digest = Pipeline.loadDigest(),
+           digest.sections.contains(where: { !$0.posts.isEmpty }) {
+            log("Today's digest has posts -- opening reader")
+            openReader()
+            return
+        }
+        log("No today's posts -- generating then opening")
+        performGeneration(thenOpen: true)
     }
 
     // MARK: - Firewall Check
