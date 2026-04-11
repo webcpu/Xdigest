@@ -34,9 +34,16 @@ func checkSetup() -> [SetupIssue] {
     if findClaude() == nil {
         issues.append(SetupIssue(
             title: "Claude Code not installed",
-            description: "Xdigest uses Claude to score posts against your taste. You need an active Claude Code subscription (not API).",
+            description: "Xdigest uses Claude to score posts against your taste. Install it, then run `claude` and use /login to sign in with your subscription (not API key).",
             action: "Install Claude Code",
-            actionUrl: "https://claude.ai/code"
+            actionUrl: "https://code.claude.com/docs/en/setup"
+        ))
+    } else if !isClaudeLoggedIn() {
+        issues.append(SetupIssue(
+            title: "Claude Code not signed in",
+            description: "Claude Code is installed but you haven't signed in yet. In Terminal, run `claude` and use /login to sign in with your subscription (not API key).",
+            action: "Open Setup Guide",
+            actionUrl: "https://code.claude.com/docs/en/setup"
         ))
     }
 
@@ -63,6 +70,71 @@ func checkSetup() -> [SetupIssue] {
     }
 
     return issues
+}
+
+/// Runs `claude auth status` and returns true iff the JSON output
+/// reports `"loggedIn": true`. This is a fast local check (~150ms, no
+/// API call) backed by Claude Code's own credential store, so it's
+/// strictly better than heuristic signals like keychain presence.
+///
+/// Blocks the caller for up to `timeout` seconds. `checkSetup()`
+/// already runs synchronously on MainActor during launch and spawns
+/// `bird home` too, so a brief block is acceptable. If setup check
+/// ever grows more processes, move this off the main actor.
+///
+/// Treats timeout and all error paths (process spawn fails, non-zero
+/// exit, broken binary, unparseable output) as "not logged in". This
+/// is a slight false-attribution for edge cases (e.g. a corrupt
+/// Claude binary surfaces as "not signed in" rather than "broken"),
+/// but the user-facing action -- reinstall / reauth via the linked
+/// setup guide -- is the same for both.
+private func isClaudeLoggedIn(timeout: TimeInterval = 3.0) -> Bool {
+    guard let claudePath = findClaude() else { return false }
+
+    let process = Process()
+    let outPipe = Pipe()
+    process.executableURL = URL(fileURLWithPath: claudePath)
+    process.arguments = ["auth", "status"]
+    process.standardOutput = outPipe
+    process.standardError = FileHandle.nullDevice
+
+    let sem = DispatchSemaphore(value: 0)
+    process.terminationHandler = { _ in sem.signal() }
+
+    do {
+        try process.run()
+    } catch {
+        return false
+    }
+
+    if sem.wait(timeout: .now() + timeout) == .timedOut {
+        // SIGTERM first; if it ignores us, SIGKILL after a short grace
+        // period so we never leak a hung subprocess.
+        process.terminate()
+        if sem.wait(timeout: .now() + 0.5) == .timedOut {
+            kill(process.processIdentifier, SIGKILL)
+        }
+        return false
+    }
+
+    guard process.terminationStatus == 0 else { return false }
+
+    let output = String(
+        data: outPipe.fileHandleForReading.readDataToEndOfFile(),
+        encoding: .utf8
+    ) ?? ""
+
+    return parseLoggedInField(output)
+}
+
+/// Extracted so it's unit-testable without spawning a real process.
+/// Returns true iff `output` contains a JSON field whose key is
+/// `loggedIn` (double-quoted) and whose value is the literal `true`,
+/// with any amount of whitespace between the colon and the value.
+/// The trailing `\b` word boundary prevents matching extended values
+/// like `true_but_expired` if Claude Code ever extends the field.
+func parseLoggedInField(_ output: String) -> Bool {
+    output.range(of: "\"loggedIn\"\\s*:\\s*true\\b", options: .regularExpression) != nil
 }
 
 /// Checks whether macOS has *explicitly* blocked incoming connections for
