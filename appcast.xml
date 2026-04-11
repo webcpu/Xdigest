@@ -6,15 +6,15 @@
     <description>Xdigest release feed</description>
     <language>en</language>
     <item>
-      <title>Xdigest 0.2.0</title>
-      <sparkle:shortVersionString>0.2.0</sparkle:shortVersionString>
-      <sparkle:version>20260411.190413</sparkle:version>
-      <pubDate>Sat, 11 Apr 2026 19:05:07 +0000</pubDate>
+      <title>Xdigest 0.3.0</title>
+      <sparkle:shortVersionString>0.3.0</sparkle:shortVersionString>
+      <sparkle:version>20260411.204718</sparkle:version>
+      <pubDate>Sat, 11 Apr 2026 20:48:18 +0000</pubDate>
       <enclosure
-        url="https://github.com/webcpu/Xdigest/releases/download/v0.2.0/Xdigest.dmg"
-        sparkle:shortVersionString="0.2.0"
-        sparkle:version="20260411.190413"
-        length="1842444"
+        url="https://github.com/webcpu/Xdigest/releases/download/v0.3.0/Xdigest.dmg"
+        sparkle:shortVersionString="0.3.0"
+        sparkle:version="20260411.204718"
+        length="1842882"
         type="application/octet-stream"/>
     </item>
   </channel>
