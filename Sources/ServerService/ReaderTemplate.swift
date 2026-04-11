@@ -93,7 +93,7 @@ video { max-width: 100%; border-radius: 16px; margin-top: 12px; }
 img[style*="border-radius"]:not([width="32"]) { cursor: zoom-in; }
 </style>
 </head>
-<body>
+<body data-initial-position="<!--INITIAL_POSITION-->">
 <div class="page-wrapper">
 <div id="app">
 <h1>xdigest</h1>
@@ -307,42 +307,85 @@ try { document.querySelectorAll('video').forEach(function(vid) {
 });
 } catch(e) { console.error('video error:', e); }
 
-var lastMtime = 0;
-var lastPostCount = 0;
-lastPostCount = (tl.innerHTML.match(/\/status\//g) || []).length;
+// Cross-device sync state
+var serverMtime = 0;
+var serverPosition = '';
+var localPosition = '';
+var suppressScrollSync = false;
 
-function loadNewPosts(newCount) {
-  fetch('/api/digest').then(function(r) { return r.text(); }).then(function(html) {
-    var existingIds = new Set();
-    tl.querySelectorAll('a').forEach(function(a) {
-      var href = a.getAttribute('href') || '';
-      var m = href.match(/status\/(\d+)/);
-      if (m) existingIds.add(m[1]);
-    });
-    var chunks = html.split(/(?=<details class="section")/);
-    var newChunks = [];
-    for (var i = 0; i < chunks.length; i++) {
-      var chunk = chunks[i].trim();
-      if (!chunk) continue;
-      var ids = chunk.match(/status\/(\d+)/g) || [];
-      var allExist = ids.length > 0 && ids.every(function(id) {
-        return existingIds.has(id.replace('status/', ''));
-      });
-      if (!allExist && ids.length > 0) {
-        newChunks.push(chunk);
-      }
+// Extract post IDs from a container, in order (top to bottom).
+function extractPostIds(container) {
+  var ids = [];
+  container.querySelectorAll('div[data-post-id]').forEach(function(post) {
+    ids.push(post.getAttribute('data-post-id'));
+  });
+  return ids;
+}
+
+// Find the post ID at the top of the viewport.
+function findTopmostPostId() {
+  var posts = tl.querySelectorAll('div[data-post-id]');
+  for (var i = 0; i < posts.length; i++) {
+    var rect = posts[i].getBoundingClientRect();
+    if (rect.bottom > 0) {
+      return posts[i].getAttribute('data-post-id');
     }
-    if (newChunks.length === 0) {
+  }
+  return '';
+}
+
+// Scroll to a specific post by ID.
+function scrollToPostId(postId) {
+  if (!postId) return;
+  var post = tl.querySelector('div[data-post-id="' + postId + '"]');
+  if (!post) return;
+  suppressScrollSync = true;
+  var rect = post.getBoundingClientRect();
+  window.scrollTo(0, window.scrollY + rect.top - 60);
+  setTimeout(function() { suppressScrollSync = false; }, 300);
+}
+
+// Banner visibility: show if there are posts above lastSeenPostId.
+function updateBanner() {
+  if (!serverPosition) {
+    banner.style.display = 'none';
+    return;
+  }
+  var postIds = extractPostIds(tl);
+  var idx = postIds.indexOf(serverPosition);
+  if (idx > 0) {
+    banner.textContent = idx + ' new post' + (idx > 1 ? 's' : '');
+    banner.style.display = 'block';
+    banner.onclick = function() {
       banner.style.display = 'none';
-      return;
-    }
-    var newHtml = newChunks.join('\n');
-    var temp = document.createElement('div');
-    temp.innerHTML = newHtml;
-    temp.querySelectorAll('video').forEach(function(vid) {
+      window.scrollTo(0, 0);
+      // Update position to the newest post
+      var newest = postIds[0];
+      if (newest) sendPosition(newest);
+    };
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+// Replace the timeline DOM with fresh HTML from /api/digest.
+function reloadDigest() {
+  return fetch('/api/digest').then(function(r) { return r.text(); }).then(function(html) {
+    tl.innerHTML = html;
+    enhanceTimeline();
+    updateBanner();
+    if (serverPosition) scrollToPostId(serverPosition);
+  });
+}
+
+// Apply video thumbnails, show-more, image lightbox to the timeline.
+function enhanceTimeline() {
+  try {
+    tl.querySelectorAll('video').forEach(function(vid) {
       var src = vid.getAttribute('data-src') || vid.getAttribute('src') || '';
       var poster = vid.getAttribute('poster') || '';
-      if (poster && src) {
+      if (poster && src && !vid.dataset.enhanced) {
+        vid.dataset.enhanced = '1';
         var thumb = document.createElement('div');
         thumb.className = 'video-thumb';
         thumb.innerHTML = '<img src="' + poster + '"><div class="play-btn"></div>';
@@ -358,10 +401,11 @@ function loadNewPosts(newCount) {
         vid.replaceWith(thumb);
       }
     });
-    temp.querySelectorAll('div[style*="display:flex"]').forEach(function(post) {
+    tl.querySelectorAll('div[data-post-id]').forEach(function(post) {
       var bodyDivs = post.querySelectorAll('div[style*="font-size:15px"], div[style*="line-height:1.5"]');
       bodyDivs.forEach(function(body) {
-        if (body.scrollHeight > 250) {
+        if (!body.dataset.enhanced && body.scrollHeight > 250) {
+          body.dataset.enhanced = '1';
           body.classList.add('post-body', 'clipped');
           var link = document.createElement('div');
           link.className = 'show-more';
@@ -379,46 +423,59 @@ function loadNewPosts(newCount) {
         }
       });
     });
-    tl.querySelectorAll('details.section[open]').forEach(function(d) {
-      d.removeAttribute('open');
-    });
-    tl.insertBefore(temp, tl.firstChild);
-    var newSections = temp.querySelectorAll('details.section');
-    for (var s = 0; s < newSections.length; s++) {
-      if (s < newSections.length - 1) {
-        newSections[s].removeAttribute('open');
-      }
-    }
-    lastPostCount = (tl.innerHTML.match(/\/status\//g) || []).length;
-    banner.style.display = 'none';
-    lastMtime = Date.now() / 1000;
-    window.scrollTo(0, 0);
-  }).catch(function(e) {
-    banner.textContent = 'Error: ' + e.message;
-  });
+  } catch(e) { console.error('enhance error:', e); }
 }
 
-setInterval(function() {
+// Debounced position update.
+var positionTimer = null;
+function sendPosition(postId) {
+  if (postId === localPosition) return;
+  localPosition = postId;
+  if (positionTimer) clearTimeout(positionTimer);
+  positionTimer = setTimeout(function() {
+    fetch('/api/position', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({lastSeenPostId: postId})
+    }).catch(function() {});
+  }, 500);
+}
+
+// On scroll, update position.
+window.addEventListener('scroll', function() {
+  if (suppressScrollSync) return;
+  var topId = findTopmostPostId();
+  if (topId) sendPosition(topId);
+}, { passive: true });
+
+// Poll every 5 seconds: sync mtime, position, banner.
+function poll() {
   fetch('/api/mtime').then(function(r) { return r.json(); }).then(function(d) {
-    if (lastMtime === 0) {
-      lastMtime = d.mtime;
-      lastPostCount = d.postCount;
-    } else if (d.mtime > lastMtime) {
-      var newCount = d.postCount - lastPostCount;
-      lastMtime = d.mtime;
-      if (newCount > 0) {
-        banner.textContent = newCount + ' new post' + (newCount > 1 ? 's' : '');
-      } else {
-        banner.textContent = 'New posts available';
+    var mtimeChanged = (d.mtime !== serverMtime);
+    var positionChanged = (d.lastSeenPostId !== serverPosition);
+    serverMtime = d.mtime;
+    serverPosition = d.lastSeenPostId || '';
+
+    if (mtimeChanged) {
+      reloadDigest();
+    } else {
+      updateBanner();
+      // Another device moved, follow its scroll
+      if (positionChanged && serverPosition && serverPosition !== findTopmostPostId()) {
+        scrollToPostId(serverPosition);
       }
-      banner.style.display = 'block';
-      banner.onclick = function() {
-        banner.textContent = 'Loading...';
-        loadNewPosts(newCount);
-      };
     }
   }).catch(function() {});
-}, 10000);
+}
+
+// Initial state
+serverPosition = document.body.dataset.initialPosition || '';
+localPosition = serverPosition;
+if (serverPosition) {
+  window.addEventListener('load', function() { scrollToPostId(serverPosition); });
+}
+updateBanner();
+setInterval(poll, 5000);
 </script>
 </body>
 </html>

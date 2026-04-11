@@ -49,10 +49,10 @@ public func renderPost(_ post: ScoredPost) -> String {
 
     var parts: [String] = []
 
-    // Post card outer div
+    // Post card outer div (data-post-id enables cross-device position sync)
     parts.append(
         """
-        <div style="display:flex;gap:8px;padding:14px 0;border-bottom:1px solid #2f3336;" data-tags="\(escapeHTML(tagsAttr))">
+        <div style="display:flex;gap:8px;padding:14px 0;border-bottom:1px solid #2f3336;" data-post-id="\(escapeHTML(display.tweetId))" data-tags="\(escapeHTML(tagsAttr))">
         """
     )
 
@@ -138,8 +138,10 @@ public func renderDigest(_ digest: Digest) -> String {
 }
 
 /// Returns the complete reader HTML page with digest content embedded.
-public func readerPage(digestHTML: String) -> String {
-    readerTemplate.replacingOccurrences(of: "<!--DIGEST_DATA-->", with: digestHTML)
+public func readerPage(digestHTML: String, initialPosition: String = "") -> String {
+    readerTemplate
+        .replacingOccurrences(of: "<!--DIGEST_DATA-->", with: digestHTML)
+        .replacingOccurrences(of: "<!--INITIAL_POSITION-->", with: escapeHTML(initialPosition))
 }
 
 // MARK: - Helpers

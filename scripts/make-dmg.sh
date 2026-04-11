@@ -51,6 +51,10 @@ cat > "$APP_BUNDLE/Contents/Info.plist" << PLIST
 </plist>
 PLIST
 
+echo "Signing app bundle..."
+"$SCRIPT_DIR/sign.sh" "$APP_BUNDLE/Contents/MacOS/$APP_NAME"
+"$SCRIPT_DIR/sign.sh" "$APP_BUNDLE"
+
 echo "Creating DMG..."
 rm -f "$DIST_DIR/$APP_NAME.dmg"
 create-dmg "$APP_BUNDLE" "$DIST_DIR" || true

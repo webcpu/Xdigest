@@ -28,19 +28,34 @@ public struct GenerateResult: Sendable {
     }
 }
 
+/// Called when position changes, so the app can persist it.
+public typealias PositionHandler = @Sendable (String) -> Void
+
 /// Thread-safe mutable digest state.
 public final class DigestState: Sendable {
     private struct State {
         var digest: Digest
         var mtime: TimeInterval
+        var lastSeenPostId: String
     }
 
     private let state: Mutex<State>
     let onGenerate: GenerateHandler?
+    let onPositionChange: PositionHandler?
 
-    init(digest: Digest, onGenerate: GenerateHandler? = nil) {
-        self.state = Mutex(State(digest: digest, mtime: Date().timeIntervalSince1970))
+    init(
+        digest: Digest,
+        lastSeenPostId: String = "",
+        onGenerate: GenerateHandler? = nil,
+        onPositionChange: PositionHandler? = nil
+    ) {
+        self.state = Mutex(State(
+            digest: digest,
+            mtime: Date().timeIntervalSince1970,
+            lastSeenPostId: lastSeenPostId
+        ))
         self.onGenerate = onGenerate
+        self.onPositionChange = onPositionChange
     }
 
     var digest: Digest {
@@ -49,6 +64,15 @@ public final class DigestState: Sendable {
 
     var mtime: TimeInterval {
         state.withLock { $0.mtime }
+    }
+
+    var lastSeenPostId: String {
+        state.withLock { $0.lastSeenPostId }
+    }
+
+    func updatePosition(_ postId: String) {
+        state.withLock { $0.lastSeenPostId = postId }
+        onPositionChange?(postId)
     }
 
     func update(_ digest: Digest) {
@@ -66,13 +90,20 @@ public final class DigestState: Sendable {
 public func startServer(
     port: Int,
     digest: Digest,
-    onGenerate: GenerateHandler? = nil
+    lastSeenPostId: String = "",
+    onGenerate: GenerateHandler? = nil,
+    onPositionChange: PositionHandler? = nil
 ) async throws -> ServerHandle {
     guard port > 0, port <= 65535, let nwPort = NWEndpoint.Port(rawValue: UInt16(port)) else {
         throw XdigestError.serverStartFailed(port: port, reason: "port must be 1-65535")
     }
 
-    let state = DigestState(digest: digest, onGenerate: onGenerate)
+    let state = DigestState(
+        digest: digest,
+        lastSeenPostId: lastSeenPostId,
+        onGenerate: onGenerate,
+        onPositionChange: onPositionChange
+    )
     let params = NWParameters.tcp
     let listener: NWListener
     do {
@@ -154,20 +185,39 @@ func routeRequest(_ rawRequest: String, state: DigestState) -> Data {
         return handleProxy(url: videoUrl, range: rangeHeader)
     }
 
+    let method = parseRequestMethod(rawRequest)
     let response: String
-    switch path {
-    case "/", "/index.html":
+    switch (method, path) {
+    case (_, "/"), (_, "/index.html"):
         response = handleRoot(state: state)
-    case "/api/digest":
+    case (_, "/api/digest"):
         response = handleApiDigest(state: state)
-    case "/api/mtime":
+    case (_, "/api/mtime"):
         response = handleApiMtime(state: state)
-    case "/api/generate":
+    case (_, "/api/generate"):
         response = handleApiGenerate(state: state)
+    case ("GET", "/api/position"):
+        response = handleGetPosition(state: state)
+    case ("POST", "/api/position"):
+        response = handlePostPosition(rawRequest: rawRequest, state: state)
     default:
         response = httpResponse(status: 404, contentType: "text/plain", body: "Not Found")
     }
     return Data(response.utf8)
+}
+
+/// Extracts the HTTP method from the first line of a request.
+func parseRequestMethod(_ rawRequest: String) -> String {
+    let firstLine = rawRequest.prefix(while: { $0 != "\r" && $0 != "\n" })
+    let parts = firstLine.split(separator: " ")
+    guard parts.count >= 1 else { return "GET" }
+    return String(parts[0])
+}
+
+/// Extracts the body from an HTTP request (everything after the blank line).
+private func parseRequestBody(_ rawRequest: String) -> String {
+    guard let bodyRange = rawRequest.range(of: "\r\n\r\n") else { return "" }
+    return String(rawRequest[bodyRange.upperBound...])
 }
 
 /// Extracts the path from the first line of an HTTP request.
@@ -184,7 +234,7 @@ func parseRequestPath(_ rawRequest: String) -> String {
 private func handleRoot(state: DigestState) -> String {
     let digest = state.digest
     let digestHTML = renderDigest(digest)
-    let page = readerPage(digestHTML: digestHTML)
+    let page = readerPage(digestHTML: digestHTML, initialPosition: state.lastSeenPostId)
     return httpResponse(status: 200, contentType: "text/html; charset=utf-8", body: page)
 }
 
@@ -198,10 +248,30 @@ private func handleApiMtime(state: DigestState) -> String {
     let digest = state.digest
     let mtime = state.mtime
     let postCount = digest.sections.reduce(0) { $0 + $1.posts.count }
+    let position = state.lastSeenPostId
     let json = """
-    {"mtime":\(mtime),"postCount":\(postCount)}
+    {"mtime":\(mtime),"postCount":\(postCount),"lastSeenPostId":"\(escapeJSON(position))"}
     """
     return httpResponse(status: 200, contentType: "application/json", body: json)
+}
+
+private func handleGetPosition(state: DigestState) -> String {
+    let position = state.lastSeenPostId
+    let json = "{\"lastSeenPostId\":\"\(escapeJSON(position))\"}"
+    return httpResponse(status: 200, contentType: "application/json", body: json)
+}
+
+private func handlePostPosition(rawRequest: String, state: DigestState) -> String {
+    let body = parseRequestBody(rawRequest)
+    guard let data = body.data(using: .utf8),
+          let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+          let postId = obj["lastSeenPostId"] as? String
+    else {
+        return httpResponse(status: 400, contentType: "application/json",
+                            body: "{\"error\":\"missing lastSeenPostId\"}")
+    }
+    state.updatePosition(postId)
+    return httpResponse(status: 200, contentType: "application/json", body: "{\"ok\":true}")
 }
 
 private func handleApiGenerate(state: DigestState) -> String {

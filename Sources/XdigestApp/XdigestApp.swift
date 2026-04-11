@@ -124,13 +124,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func startServer() {
         NSApp.setActivationPolicy(.accessory)
         let initialDigest = Pipeline.loadDigest() ?? Digest(date: "", sections: [])
+        let initialPosition = Pipeline.loadPosition()
         Task {
             do {
                 self.serverHandle = try await ServerService.startServer(
                     port: serverPort,
                     digest: initialDigest,
+                    lastSeenPostId: initialPosition,
                     onGenerate: { [weak self] in
                         self?.runPipelineSync() ?? GenerateResult(picks: 0, error: "app not ready")
+                    },
+                    onPositionChange: { postId in
+                        try? Pipeline.savePosition(postId)
                     }
                 )
                 self.log("[App] Server started on port \(serverPort)")
