@@ -8,6 +8,8 @@
 
 **Read on any device.** Phone, Mac, iPad -- Xdigest keeps them all in sync. Pick up right where you left off, every time. It just works.
 
+https://github.com/user-attachments/assets/a55de033-181a-4647-8b06-4d823f7810c3
+
 ## Requirements
 
 - macOS 15+
