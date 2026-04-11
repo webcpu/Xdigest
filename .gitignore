@@ -2,3 +2,20 @@
 .DS_Store
 .swiftpm/
 dist/
+
+# Secrets / credentials (defensive — should never exist in repo)
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.keychain
+secrets/
+credentials.json
+**/cookies.json
+**/auth_token*
+**/ct0*
+
+# Local tooling state
+.claude/handoff*.md
+.claude/*.log

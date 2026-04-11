@@ -16,7 +16,8 @@ set -euo pipefail
 APP_NAME="Xdigest"
 BUNDLE_ID="com.xdigest.app"
 VERSION="0.1.0"
-NOTARY_PROFILE="xdigest-notary"
+# Keychain profile used for xcrun notarytool. Override via env if needed.
+NOTARY_PROFILE="${XDIGEST_NOTARY_PROFILE:-xdigest-notary}"
 
 NOTARIZE=0
 for arg in "$@"; do

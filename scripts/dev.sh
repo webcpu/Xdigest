@@ -35,7 +35,7 @@ echo "==> Building ($CONFIG)"
 swift build -c "$CONFIG" 2>&1 | grep -E "error:|warning:|Build complete" | tail -5
 
 echo "==> Signing"
-"$SCRIPT_DIR/sign.sh" "$BINARY" 2>&1 | tail -1
+"$SCRIPT_DIR/sign.sh" "$BINARY" --no-timestamp 2>&1 | tail -1
 
 echo "==> Stopping old process"
 pkill -f "Xdigest" 2>/dev/null || true
