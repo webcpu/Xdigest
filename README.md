@@ -18,7 +18,7 @@ https://github.com/user-attachments/assets/a55de033-181a-4647-8b06-4d823f7810c3
 
 - macOS 15+
 - [Claude Code](https://code.claude.com/docs/en/setup) -- install it, then run `claude` and use `/login` to sign in with your subscription (not API key)
-- [bird](https://github.com/steipete/bird) CLI (`brew install steipete/tap/bird`)
+- [bird](https://www.npmjs.com/package/@steipete/bird) CLI (`npm install -g @steipete/bird`)
 - **Logged into X (Twitter) in Safari, Chrome, or Firefox** -- bird reads browser cookies
 
 > **Note:** If you added x.com to your dock as a web app, it has isolated cookies that bird can't read. Log in through the browser's regular window instead.

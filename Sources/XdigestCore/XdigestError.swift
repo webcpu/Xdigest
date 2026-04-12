@@ -29,7 +29,7 @@ public enum XdigestError: Error, CustomStringConvertible, Sendable {
     public var description: String {
         switch self {
         case .birdNotFound:
-            "bird CLI not found. Install via: brew install steipete/tap/bird"
+            "bird CLI not found. Install via: npm install -g @steipete/bird"
         case .birdFetchFailed(let command, let stderr):
             "[Bird] \(command) failed: \(stderr)"
         case .birdOutputInvalid(let command, let detail):

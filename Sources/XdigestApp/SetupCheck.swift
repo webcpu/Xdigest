@@ -26,7 +26,7 @@ func checkSetup() -> [SetupIssue] {
         issues.append(SetupIssue(
             title: "bird CLI not installed",
             description: "Xdigest uses bird to fetch your X feed.",
-            action: "Run in Terminal: brew install steipete/tap/bird"
+            action: "Run in Terminal: npm install -g @steipete/bird"
         ))
     }
 
