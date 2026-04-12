@@ -29,7 +29,7 @@ public func generate(
     let seen = loadSeen(from: cacheDir)
 
     let tweets = try await withRetry { try await bird.fetchHome(count: count) }
-    let bookmarks = try await withRetry { try await bird.fetchBookmarks() }
+    let bookmarks = try await withRetry { try await loadBookmarks(using: bird, cacheDir: cacheDir) }
     let scored = try await withRetry {
         try await scorer.score(tweets, against: bookmarks, topN: topN, seen: seen)
     }

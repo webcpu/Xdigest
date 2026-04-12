@@ -20,6 +20,12 @@ public struct BirdService: Sendable {
         return try raw.map(normalize)
     }
 
+    public func fetchLatestBookmark() async throws -> Bookmark? {
+        let data = try await runBirdProcess(at: birdPath, arguments: ["bookmarks", "-n", "1", "--json-full"])
+        let raw = try parseBirdOutput(data, command: "bookmarks -n 1")
+        return try raw.first.map(normalize)
+    }
+
     public func fetchBookmarks(count: Int? = nil) async throws -> [Bookmark] {
         var args = ["bookmarks", "--json-full"]
         if let count {
