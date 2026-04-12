@@ -45,6 +45,14 @@ codesign --force --deep --sign "$(security find-identity -v -p codesigning \
     "$PROJECT_DIR/.build/$CONFIG/Sparkle.framework" 2>/dev/null
 "$SCRIPT_DIR/sign.sh" "$BINARY" --no-timestamp 2>&1 | tail -1
 
+echo "==> Updating firewall rule"
+# Each rebuild changes the binary's CDHash. macOS firewall silently blocks
+# the new binary even though the path and signing identity are unchanged.
+# Re-add the binary so the firewall learns the new hash.
+/usr/libexec/ApplicationFirewall/socketfilterfw --remove "$BINARY" 2>/dev/null || true
+/usr/libexec/ApplicationFirewall/socketfilterfw --add "$BINARY" 2>/dev/null
+/usr/libexec/ApplicationFirewall/socketfilterfw --unblockapp "$BINARY" 2>/dev/null
+
 echo "==> Stopping old process"
 pkill -f "Xdigest" 2>/dev/null || true
 
