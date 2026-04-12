@@ -639,6 +639,7 @@ function enhanceTimeline() {
 
 // Send a single anchor to the server. One job: HTTP POST.
 function postAnchor(anchor) {
+  if (!anchor.postId) return;
   fetch('/api/position', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
