@@ -57,13 +57,13 @@ func buildStatusMenu(
         keyEquivalent: "o"
     ))
 
+    menu.addItem(.separator())
+
     menu.addItem(NSMenuItem(
-        title: "Open on iPhone / iPad...",
+        title: "QR Code for Phone...",
         action: qrCodeAction,
         keyEquivalent: ""
     ))
-
-    menu.addItem(.separator())
     let updatesItem = NSMenuItem(
         title: "Check for Updates...",
         action: #selector(SPUStandardUpdaterController.checkForUpdates(_:)),

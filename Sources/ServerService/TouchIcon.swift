@@ -13,3 +13,12 @@ iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAA
 
 /// Decoded PNG data. Lazily computed once, cached forever.
 let touchIconData: Data = Data(base64Encoded: touchIconBase64)!
+
+/// 32x32 PNG favicon for Safari tab bar. Safari ignores data URI
+/// favicons and rejects oversized PNGs for tab icons.
+///
+/// Regenerate: sips -z 32 32 /tmp/xdigest-180.png --out /tmp/x32.png
+///             base64 -i /tmp/x32.png | pbcopy
+let faviconBase64 = "iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABz0lEQVR4nO2VPUscURSGz12jRZREw1q46XVhU/nxA4SAIMHC2kZM/kHcQiWxsbAJYqGCCiGN4M9IEYlG/FosUgQiGAkpAgE/lt3NEwZmzfF4HZZxwcJ5YGD2vO+5+3LPzB2RhISEuwbIAuf85wh45PG1AN+UL+jpCrXn3EwF+AMcAotAzhcib5qWPZ6gWfNaaVEBLGVg3C7eAHw2xgHzB3+VtgGkYgao8sqGyAFFO4rw+m62Pmt6bYDesJ4CmoNRAdPAhfKcAe02xKRZaAVYNbW8ZzzeAB7fiPG9sYYHwHbEtgVjarhFAAd8Vb5Pl3MMcM6VRWRUREqe/mKgOecqEhPnHCLyUZV6Uh7TvojMePqnnXOHcnt+qPumawFCdj21gtSHU/0jZVWgTUQWPI1LwOM6BHgYGUBE5kUk46k/FZG5OgToUPeVKwowZJ7mTWDP1AbjvgWh90D5trTwBDhRYjE8nLqBkqofA61xAgD9xvdWi2tGnFDajNHe1xoAaAQywBjwy5yE6app2CzwJTiU1CJNQMJ4XkQEqIWX1eY08NNs/TPP9vWFXzI9irYYAUpXjnNg3RimIh6gWeP9UEOAIPRvYAd4B3TetH5CQsL95B8llCH6RW+2KgAAAABJRU5ErkJggg=="
+
+let faviconData: Data = Data(base64Encoded: faviconBase64)!

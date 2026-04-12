@@ -35,6 +35,14 @@ echo "==> Building ($CONFIG)"
 swift build -c "$CONFIG" 2>&1 | grep -E "error:|warning:|Build complete" | tail -5
 
 echo "==> Signing"
+# Sparkle.framework ships with Sparkle's own Team ID. Re-sign it with
+# our Developer ID so macOS allows the signed binary to load it.
+# --deep is deprecated for production (make-dmg.sh signs innermost-first)
+# but fine for dev iteration speed.
+codesign --force --deep --sign "$(security find-identity -v -p codesigning \
+    | awk -F'"' '/Developer ID Application/ { print $2; exit }')" \
+    --options runtime --timestamp=none \
+    "$PROJECT_DIR/.build/$CONFIG/Sparkle.framework" 2>/dev/null
 "$SCRIPT_DIR/sign.sh" "$BINARY" --no-timestamp 2>&1 | tail -1
 
 echo "==> Stopping old process"

@@ -367,10 +367,11 @@ func routeRequest(_ rawRequest: String, state: DigestState) -> Data {
         return handleProxy(url: videoUrl, range: rangeHeader)
     }
 
-    // Binary response: serve the embedded 180x180 app icon for
-    // apple-touch-icon and the PWA manifest.
     if path == "/icon-180.png" {
         return httpBinaryResponse(status: 200, contentType: "image/png", body: touchIconData)
+    }
+    if path == "/xd-icon.png" {
+        return httpBinaryResponse(status: 200, contentType: "image/png", body: faviconData)
     }
 
     let method = parseRequestMethod(rawRequest)
@@ -556,9 +557,25 @@ func parseRangeHeader(_ rawRequest: String) -> String? {
 /// Builds a raw HTTP/1.1 response string with headers and body.
 private func handleManifest() -> String {
     let json = """
-    {"name":"Xdigest","short_name":"Xdigest","start_url":"/","display":"standalone","background_color":"#1a1a1a","theme_color":"#1a1a1a","icons":[{"src":"/icon-180.png","sizes":"180x180","type":"image/png"}]}
+    {
+      "id": "/",
+      "name": "Xdigest",
+      "short_name": "Xdigest",
+      "start_url": "/",
+      "scope": "/",
+      "display": "standalone",
+      "background_color": "#1a1a1a",
+      "theme_color": "#1a1a1a",
+      "icons": [
+        {
+          "src": "/icon-180.png",
+          "sizes": "180x180",
+          "type": "image/png"
+        }
+      ]
+    }
     """
-    return httpResponse(status: 200, contentType: "application/manifest+json", body: json)
+    return httpResponse(status: 200, contentType: "application/json", body: json)
 }
 
 func httpBinaryResponse(status: Int, contentType: String, body: Data) -> Data {
