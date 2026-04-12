@@ -38,6 +38,7 @@ func buildStatusMenu(
     isGenerating: Bool,
     generateAction: Selector,
     openReaderAction: Selector,
+    qrCodeAction: Selector,
     quitAction: Selector,
     updaterController: SPUStandardUpdaterController
 ) -> NSMenu {
@@ -54,6 +55,12 @@ func buildStatusMenu(
         title: "Open Reader",
         action: openReaderAction,
         keyEquivalent: "o"
+    ))
+
+    menu.addItem(NSMenuItem(
+        title: "Open on iPhone / iPad...",
+        action: qrCodeAction,
+        keyEquivalent: ""
     ))
 
     menu.addItem(.separator())

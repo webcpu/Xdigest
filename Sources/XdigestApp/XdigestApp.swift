@@ -24,6 +24,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private var serverHandle: ServerHandle?
     private var setupWindow: NSWindow?
+    private var qrWindow: NSWindow?
     private var generatingCount = 0
     private var isGenerating: Bool { generatingCount > 0 }
     nonisolated private let generationQueue = GenerationQueue()
@@ -81,6 +82,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             isGenerating: isGenerating,
             generateAction: #selector(generateDigest),
             openReaderAction: #selector(openReader),
+            qrCodeAction: #selector(showQRCode),
             quitAction: #selector(quit),
             updaterController: updaterController
         )
@@ -92,6 +94,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func openReader() {
         NSWorkspace.shared.open(URL(string: "http://localhost:\(serverPort)")!)
+    }
+
+    @objc private func showQRCode() {
+        if let existing = qrWindow, existing.isVisible {
+            existing.makeKeyAndOrderFront(nil)
+            return
+        }
+        qrWindow = showQRCodeWindow()
     }
 
     @objc private func quit() {

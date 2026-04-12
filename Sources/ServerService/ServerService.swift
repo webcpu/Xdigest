@@ -367,11 +367,19 @@ func routeRequest(_ rawRequest: String, state: DigestState) -> Data {
         return handleProxy(url: videoUrl, range: rangeHeader)
     }
 
+    // Binary response: serve the embedded 180x180 app icon for
+    // apple-touch-icon and the PWA manifest.
+    if path == "/icon-180.png" {
+        return httpBinaryResponse(status: 200, contentType: "image/png", body: touchIconData)
+    }
+
     let method = parseRequestMethod(rawRequest)
     let response: String
     switch (method, path) {
     case (_, "/"), (_, "/index.html"):
         response = handleRoot(state: state)
+    case (_, "/manifest.json"):
+        response = handleManifest()
     case (_, "/api/digest"):
         response = handleApiDigest(state: state)
     case (_, "/api/mtime"):
@@ -546,6 +554,24 @@ func parseRangeHeader(_ rawRequest: String) -> String? {
 // MARK: - HTTP Response Builder
 
 /// Builds a raw HTTP/1.1 response string with headers and body.
+private func handleManifest() -> String {
+    let json = """
+    {"name":"Xdigest","short_name":"Xdigest","start_url":"/","display":"standalone","background_color":"#1a1a1a","theme_color":"#1a1a1a","icons":[{"src":"/icon-180.png","sizes":"180x180","type":"image/png"}]}
+    """
+    return httpResponse(status: 200, contentType: "application/manifest+json", body: json)
+}
+
+func httpBinaryResponse(status: Int, contentType: String, body: Data) -> Data {
+    let statusText = httpStatusText(status)
+    let header = "HTTP/1.1 \(status) \(statusText)\r\n"
+        + "Content-Type: \(contentType)\r\n"
+        + "Content-Length: \(body.count)\r\n"
+        + "Cache-Control: public, max-age=86400\r\n"
+        + "Connection: close\r\n"
+        + "\r\n"
+    return Data(header.utf8) + body
+}
+
 func httpResponse(status: Int, contentType: String, body: String) -> String {
     let statusText = httpStatusText(status)
     let bodyData = Data(body.utf8)
