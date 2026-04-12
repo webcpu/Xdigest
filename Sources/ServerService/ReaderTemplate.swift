@@ -320,6 +320,8 @@ var knownInstanceId = '';    // server instance ID we loaded; reload if it chang
 var inProgrammaticScroll = 0;  // counter, handles overlapping programmatic scrolls
 var lastUserScrollTime = 0;
 var IDLE_MS = 3000;          // don't interrupt active reading within this window
+var prefetchTriggeredForSection = null;  // timestamp of section that triggered prefetch
+var prefetchInFlight = false;
 
 // Extract post IDs from the timeline, in document order.
 function extractPostIds() {
@@ -698,7 +700,40 @@ window.addEventListener('scroll', function() {
   lastUserScrollTime = Date.now();
   var anchor = findReadingAnchor();
   if (anchor.postId) sendAnchor(anchor);
+  checkPrefetch();
 }, { passive: true });
+
+// Prefetch: when the user scrolls into the latest section, silently
+// trigger a background generation so the next batch is ready when they
+// finish reading. Fires once per section. Ignores programmatic scrolls
+// (cross-device sync) to prevent duplicate triggers.
+function checkPrefetch() {
+  if (prefetchInFlight) return;
+  var sections = tl.querySelectorAll('details.section');
+  if (sections.length === 0) return;
+  var latest = sections[0];
+  var timeEl = latest.querySelector('.section-time');
+  var sectionId = timeEl ? timeEl.textContent : '';
+  if (prefetchTriggeredForSection === sectionId) return;
+
+  var rect = latest.getBoundingClientRect();
+
+  var posts = latest.querySelectorAll('div[data-post-id]');
+  if (posts.length === 0) return;
+  if (rect.bottom < 0 || rect.top > window.innerHeight) return;
+
+  console.log('[prefetch] triggering for section: ' + sectionId);
+  prefetchTriggeredForSection = sectionId;
+  prefetchInFlight = true;
+  fetch('/api/generate', {method: 'POST'}).then(function() {
+    console.log('[prefetch] generation complete');
+    prefetchInFlight = false;
+  }).catch(function(e) {
+    console.log('[prefetch] generation failed: ' + e);
+    prefetchInFlight = false;
+    prefetchTriggeredForSection = null;
+  });
+}
 
 // Is the user actively reading right now?
 function isUserActive() {
