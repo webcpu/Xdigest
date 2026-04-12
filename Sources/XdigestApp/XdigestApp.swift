@@ -28,9 +28,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var generatingCount = 0
     private var isGenerating: Bool { generatingCount > 0 }
     nonisolated private let generationQueue = GenerationQueue()
-    private lazy var scheduler = AutoGenerateScheduler { [weak self] in
-        self?.performGeneration(thenOpen: false)
-    }
     private lazy var updaterController = SPUStandardUpdaterController(
         startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil
     )
@@ -83,16 +80,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func rebuildMenu() {
         statusItem?.menu = buildStatusMenu(
             isGenerating: isGenerating,
-            currentInterval: scheduler.currentInterval,
             generateAction: #selector(generateDigest),
             openReaderAction: #selector(openReader),
             qrCodeAction: #selector(showQRCode),
             quitAction: #selector(quit),
-            updaterController: updaterController,
-            intervalHandler: { [weak self] interval in
-                self?.scheduler.updateInterval(interval)
-                self?.rebuildMenu()
-            }
+            updaterController: updaterController
         )
     }
 
@@ -124,7 +116,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Task {
             do {
                 let outcome = try await generationQueue.submit(serverHandle: serverHandle)
-                scheduler.recordGeneration()
                 let picks = outcome.digest.sections.first?.posts.count ?? 0
                 showNotification(title: "Xdigest", body: "\(picks) new posts")
                 if thenOpen { openReader() }
@@ -153,7 +144,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 )
                 self.log("[App] Server started on port \(serverPort)")
                 self.checkFirewall()
-                self.scheduler.start()
                 self.runAutoOpenFlow()
             } catch {
                 self.log("[App] Server failed: \(error)")

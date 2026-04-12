@@ -36,13 +36,11 @@ func makeMenuBarIcon() -> NSImage {
 /// than walking the responder chain.
 func buildStatusMenu(
     isGenerating: Bool,
-    currentInterval: GenerateInterval,
     generateAction: Selector,
     openReaderAction: Selector,
     qrCodeAction: Selector,
     quitAction: Selector,
-    updaterController: SPUStandardUpdaterController,
-    intervalHandler: @escaping (GenerateInterval) -> Void
+    updaterController: SPUStandardUpdaterController
 ) -> NSMenu {
     let menu = NSMenu()
 
@@ -61,24 +59,6 @@ func buildStatusMenu(
 
     menu.addItem(.separator())
 
-    let autoGenItem = NSMenuItem(title: "Auto-Generate", action: nil, keyEquivalent: "")
-    let autoGenMenu = NSMenu()
-    for interval in GenerateInterval.allCases {
-        let item = NSMenuItem(title: interval.title, action: nil, keyEquivalent: "")
-        item.state = interval == currentInterval ? .on : .off
-        let handler = intervalHandler
-        let captured = interval
-        item.action = #selector(IntervalTarget.select(_:))
-        let target = IntervalTarget(interval: captured, handler: handler)
-        item.target = target
-        item.representedObject = target
-        autoGenMenu.addItem(item)
-    }
-    autoGenItem.submenu = autoGenMenu
-    menu.addItem(autoGenItem)
-
-    menu.addItem(.separator())
-
     menu.addItem(NSMenuItem(
         title: "QR Code for Phone...",
         action: qrCodeAction,
@@ -94,20 +74,4 @@ func buildStatusMenu(
     menu.addItem(NSMenuItem(title: "Quit", action: quitAction, keyEquivalent: "q"))
 
     return menu
-}
-
-/// Action target for interval menu items. Stored as `representedObject`
-/// to keep it alive for the menu's lifetime.
-final class IntervalTarget: NSObject {
-    private let interval: GenerateInterval
-    private let handler: (GenerateInterval) -> Void
-
-    init(interval: GenerateInterval, handler: @escaping (GenerateInterval) -> Void) {
-        self.interval = interval
-        self.handler = handler
-    }
-
-    @objc func select(_ sender: Any?) {
-        handler(interval)
-    }
 }
