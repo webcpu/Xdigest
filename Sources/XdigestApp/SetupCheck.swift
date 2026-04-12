@@ -47,18 +47,22 @@ func checkSetup() -> [SetupIssue] {
         ))
     }
 
-    // 3. X login / Safari cookie access
+    // 3. Full Disk Access (must come before X login -- bird needs it to read cookies)
+    if !hasFullDiskAccess() {
+        issues.append(SetupIssue(
+            title: "Full Disk Access required",
+            description: "macOS needs your permission for Xdigest to read Safari's cookies. Click below to open System Settings, enable Xdigest in the list, then switch back to this window.",
+            action: "Open Full Disk Access Settings",
+            actionUrl: "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_AllFiles"
+        ))
+        return issues
+    }
+
+    // 4. X login / Safari cookie access
     if findBird() != nil {
         switch diagnoseBird() {
-        case .ok:
+        case .ok, .needsFullDiskAccess:
             break
-        case .needsFullDiskAccess:
-            issues.append(SetupIssue(
-                title: "Full Disk Access required",
-                description: "macOS needs your permission for Xdigest to read Safari's cookies. Click below to open System Settings, enable Xdigest in the list, then switch back to this window.",
-                action: "Open Full Disk Access Settings",
-                actionUrl: "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_AllFiles"
-            ))
         case .notLoggedIn:
             issues.append(SetupIssue(
                 title: "Not logged into X",
@@ -201,6 +205,15 @@ private func runSocketFilterFW(_ args: [String]) -> String? {
     guard process.terminationStatus == 0 else { return nil }
     let data = pipe.fileHandleForReading.readDataToEndOfFile()
     return String(data: data, encoding: .utf8)
+}
+
+/// Checks if the app has Full Disk Access by probing a TCC-protected path.
+/// Safari's cookie database requires Full Disk Access; if we can open it,
+/// we have the permission.
+private func hasFullDiskAccess() -> Bool {
+    let home = FileManager.default.homeDirectoryForCurrentUser.path
+    let safariCookies = "\(home)/Library/Cookies/Cookies.binarycookies"
+    return FileManager.default.isReadableFile(atPath: safariCookies)
 }
 
 /// Quick check: can bird fetch at least one tweet?
