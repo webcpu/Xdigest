@@ -208,12 +208,13 @@ private func runSocketFilterFW(_ args: [String]) -> String? {
 }
 
 /// Checks if the app has Full Disk Access by probing a TCC-protected path.
-/// Safari's cookie database requires Full Disk Access; if we can open it,
-/// we have the permission.
+/// Safari's containerized cookie database requires Full Disk Access.
 private func hasFullDiskAccess() -> Bool {
     let home = FileManager.default.homeDirectoryForCurrentUser.path
-    let safariCookies = "\(home)/Library/Cookies/Cookies.binarycookies"
-    return FileManager.default.isReadableFile(atPath: safariCookies)
+    let containerCookies = "\(home)/Library/Containers/com.apple.Safari/Data/Library/Cookies/Cookies.binarycookies"
+    let legacyCookies = "\(home)/Library/Cookies/Cookies.binarycookies"
+    return FileManager.default.isReadableFile(atPath: containerCookies)
+        || FileManager.default.isReadableFile(atPath: legacyCookies)
 }
 
 /// Quick check: can bird fetch at least one tweet?
