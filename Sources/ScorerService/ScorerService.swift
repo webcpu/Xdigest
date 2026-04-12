@@ -4,7 +4,7 @@ import XdigestCore
 private let systemPrompt = """
 You are a personal X feed curator.
 
-You receive a list of tweets the user recently bookmarked (taste signal) and a \
+You receive the user's taste profile (extracted from their bookmarks) and a \
 list of candidate tweets from their current For You feed. Your job: pick the \
 candidates that best match their taste.
 
@@ -22,18 +22,18 @@ public struct ScorerService: Sendable {
         self.claudePath = path
     }
 
-    /// Scores candidates against bookmarks using Claude.
+    /// Scores candidates against a taste profile using Claude.
     /// Filters seen tweets before scoring.
     public func score(
         _ tweets: [Tweet],
-        against bookmarks: [Bookmark],
+        tasteProfile: String,
         topN: Int = 10,
         seen: Set<String> = []
     ) async throws -> [ScoredPost] {
         let candidates = filterSeenTweets(tweets, seen: seen)
-        guard !candidates.isEmpty else { return [] }
+        guard !candidates.isEmpty, !tasteProfile.isEmpty else { return [] }
 
-        let prompt = buildPrompt(bookmarks: bookmarks, candidates: candidates, topN: topN)
+        let prompt = buildPrompt(tasteProfile: tasteProfile, candidates: candidates, topN: topN)
         let schema = buildSchema()
         let data = try await runClaude(
             at: claudePath,

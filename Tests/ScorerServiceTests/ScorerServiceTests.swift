@@ -39,13 +39,13 @@ func filterSeenEmptySet() {
 
 // MARK: - Build Prompt
 
-@Test("buildPrompt includes bookmark and candidate texts")
+@Test("buildPrompt includes taste profile and candidate texts")
 func buildPromptIncludesTexts() {
-    let bookmarks = [makeTweet(id: "b1", text: "great AI essay")]
+    let profile = "User loves AI essays and technical content"
     let candidates = [makeTweet(id: "c1", text: "new Claude feature")]
-    let prompt = buildPrompt(bookmarks: bookmarks, candidates: candidates, topN: 5)
+    let prompt = buildPrompt(tasteProfile: profile, candidates: candidates, topN: 5)
 
-    #expect(prompt.contains("great AI essay"))
+    #expect(prompt.contains("AI essays and technical content"))
     #expect(prompt.contains("new Claude feature"))
     #expect(prompt.contains("[0]"))
     #expect(prompt.contains("top 5"))
@@ -57,7 +57,7 @@ func buildPromptIncludesIndices() {
         makeTweet(id: "1", text: "first"),
         makeTweet(id: "2", text: "second"),
     ]
-    let prompt = buildPrompt(bookmarks: [], candidates: candidates, topN: 2)
+    let prompt = buildPrompt(tasteProfile: "", candidates: candidates, topN: 2)
     #expect(prompt.contains("[0]"))
     #expect(prompt.contains("[1]"))
 }

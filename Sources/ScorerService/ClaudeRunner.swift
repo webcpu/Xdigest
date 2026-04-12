@@ -36,6 +36,32 @@ public func runClaude(
     )
 }
 
+/// Runs claude in plain text mode (no structured output).
+public func runClaudePlainText(
+    at path: String,
+    prompt: String
+) async throws -> Data {
+    guard FileManager.default.isExecutableFile(atPath: path) else {
+        throw XdigestError.claudeNotFound
+    }
+
+    let promptFile = try writePromptToTemp(prompt)
+    defer { try? FileManager.default.removeItem(at: promptFile) }
+
+    return try await runProcess(
+        at: path,
+        arguments: [
+            "-p",
+            "--model", "opus",
+            "--output-format", "text",
+            "--no-session-persistence",
+        ],
+        stdinFile: promptFile,
+        label: "claude",
+        makeError: { detail in XdigestError.claudeScoringFailed(exitCode: -1, stderr: detail) }
+    )
+}
+
 /// Writes prompt text to a temp file for piping to claude's stdin.
 private func writePromptToTemp(_ prompt: String) throws -> URL {
     let url = FileManager.default.temporaryDirectory

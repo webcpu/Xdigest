@@ -1,12 +1,5 @@
 import XdigestCore
 
-/// Formats a bookmark line for the prompt: "- @handle: text"
-private func formatBookmarkLine(_ bookmark: Bookmark) -> String {
-    let handle = bookmark.author.username
-    let text = truncate(bookmark.text, limit: 600)
-    return "- @\(handle): \(text)"
-}
-
 /// Formats a candidate line with index: "[0] @handle: text"
 private func formatCandidateLine(index: Int, tweet: Tweet) -> String {
     let handle = tweet.author.username
@@ -21,15 +14,14 @@ private func truncate(_ text: String, limit: Int) -> String {
     return String(cleaned.prefix(limit)) + "..."
 }
 
-/// Builds the scoring prompt for Claude.
-public func buildPrompt(bookmarks: [Bookmark], candidates: [Tweet], topN: Int) -> String {
-    let bookmarkLines = bookmarks.map(formatBookmarkLine)
+/// Builds the scoring prompt for Claude using a pre-extracted taste profile.
+public func buildPrompt(tasteProfile: String, candidates: [Tweet], topN: Int) -> String {
     let candidateLines = candidates.enumerated().map { formatCandidateLine(index: $0.offset, tweet: $0.element) }
 
     return """
-    Here are \(bookmarkLines.count) tweets the user recently bookmarked (taste signal):
+    Here is the user's taste profile (extracted from their bookmarks):
 
-    \(bookmarkLines.joined(separator: "\n"))
+    \(tasteProfile)
 
     ---
 

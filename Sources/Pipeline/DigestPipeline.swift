@@ -29,9 +29,9 @@ public func generate(
     let seen = loadSeen(from: cacheDir)
 
     let tweets = try await withRetry { try await bird.fetchHome(count: count) }
-    let bookmarks = try await withRetry { try await loadBookmarks(using: bird, cacheDir: cacheDir) }
+    let tasteProfile = try await withRetry { try await loadTasteProfile(using: bird, cacheDir: cacheDir) }
     let scored = try await withRetry {
-        try await scorer.score(tweets, against: bookmarks, topN: topN, seen: seen)
+        try await scorer.score(tweets, tasteProfile: tasteProfile, topN: topN, seen: seen)
     }
     let newDigest = assemble(scored)
 
