@@ -50,7 +50,11 @@ public final class DigestState: @unchecked Sendable {
         /// height on different devices.
         var lastSeenFraction: Double
         var version: Int
+        var generating: Bool = false
+        var lastGenerateTime: TimeInterval = 0
     }
+
+    private static let generateCooldown: TimeInterval = 120
 
     private let state: Mutex<State>
     private let sseClients = Mutex<[NWConnection]>([])
@@ -156,6 +160,33 @@ public final class DigestState: @unchecked Sendable {
         }
     }
 
+    /// Atomically claim the generation slot. Returns true if claimed.
+    func tryClaimGenerate() -> Bool {
+        writeQueue.sync {
+            let allowed = state.withLock { s in
+                !s.generating && (Date().timeIntervalSince1970 - s.lastGenerateTime) >= Self.generateCooldown
+            }
+            guard allowed else { return false }
+            state.withLock {
+                $0.generating = true
+                $0.version += 1
+            }
+            broadcastState()
+            return true
+        }
+    }
+
+    func finishGenerating() {
+        writeQueue.sync {
+            state.withLock {
+                $0.generating = false
+                $0.lastGenerateTime = Date().timeIntervalSince1970
+                $0.version += 1
+            }
+            broadcastState()
+        }
+    }
+
     func updatePosition(_ postId: String, fraction: Double) {
         writeQueue.sync {
             var changed = false
@@ -176,10 +207,14 @@ public final class DigestState: @unchecked Sendable {
     }
 
     func broadcastState() {
+        broadcast(event: stateJson())
+    }
+
+    func stateJson() -> String {
         let snapshot = state.withLock { $0 }
         let postCount = snapshot.digest.sections.reduce(0) { $0 + $1.posts.count }
-        let json = "{\"instanceId\":\"\(instanceId)\",\"version\":\(snapshot.version),\"mtime\":\(snapshot.mtime),\"postCount\":\(postCount),\"lastSeenPostId\":\"\(snapshot.lastSeenPostId)\",\"lastSeenFraction\":\(snapshot.lastSeenFraction)}"
-        broadcast(event: json)
+        let canGen = !snapshot.generating && (Date().timeIntervalSince1970 - snapshot.lastGenerateTime) >= Self.generateCooldown
+        return "{\"instanceId\":\"\(instanceId)\",\"version\":\(snapshot.version),\"mtime\":\(snapshot.mtime),\"postCount\":\(postCount),\"lastSeenPostId\":\"\(snapshot.lastSeenPostId)\",\"lastSeenFraction\":\(snapshot.lastSeenFraction),\"canGenerate\":\(canGen)}"
     }
 
     func update(_ digest: Digest) {
@@ -331,9 +366,7 @@ private func startSseStream(connection: NWConnection, state: DigestState) {
         + "Access-Control-Allow-Origin: *\r\n"
         + "\r\n"
 
-    let snap = state.snapshot()
-    let postCount = snap.digest.sections.reduce(0) { $0 + $1.posts.count }
-    let initialEvent = "data: {\"instanceId\":\"\(state.instanceId)\",\"version\":\(snap.version),\"mtime\":\(snap.mtime),\"postCount\":\(postCount),\"lastSeenPostId\":\"\(snap.lastSeenPostId)\",\"lastSeenFraction\":\(snap.lastSeenFraction)}\n\n"
+    let initialEvent = "data: \(state.stateJson())\n\n"
 
     connection.send(content: Data((headers + initialEvent).utf8), completion: .contentProcessed { error in
         if error != nil {
@@ -475,7 +508,12 @@ private func handleApiGenerate(state: DigestState) -> String {
         return httpResponse(status: 501, contentType: "application/json",
                           body: "{\"error\":\"generate not configured\"}")
     }
+    guard state.tryClaimGenerate() else {
+        return httpResponse(status: 200, contentType: "application/json",
+                          body: "{\"picks\":0,\"skipped\":\"cooldown\"}")
+    }
     let result = onGenerate()
+    state.finishGenerating()
     if let error = result.error {
         return httpResponse(status: 500, contentType: "application/json",
                           body: "{\"error\":\"\(escapeJSON(error))\"}")
