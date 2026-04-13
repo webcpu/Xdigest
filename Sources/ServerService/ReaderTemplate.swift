@@ -47,7 +47,7 @@ html, body {
 #app * { max-width: 100%; box-sizing: border-box; }
 @media (max-width: 430px) { #app { padding: 8px; } }
 @media (min-width: 1400px) { #app { max-width: 1024px; } }
-h1 { font-size: 2.5rem; font-weight: 600; font-family: -apple-system, "SF Pro Display", "Helvetica Neue", Helvetica, sans-serif; color: #f5f5f7; letter-spacing: -0.03em; margin-bottom: 4px; }
+h1 { font-size: 2.5rem; font-weight: 600; font-family: -apple-system, "SF Pro Display", "Helvetica Neue", Helvetica, sans-serif; color: #f5f5f7; letter-spacing: -0.03em; margin-bottom: 4px; padding-top: env(safe-area-inset-top, 0px); }
 h2, h2.section-time { font-size: 1.2rem; font-weight: 600; font-family: -apple-system, "SF Pro Display", "Helvetica Neue", Helvetica, sans-serif; color: #86868b; letter-spacing: -0.01em; padding: 20px 0 8px 0; border-bottom: 1px solid #424245; margin: 0; }
 details.section { border-bottom: 1px solid #474d54; }
 details.section > summary.section-time { cursor: pointer; list-style: none; font-size: 1.2rem; font-weight: 600; font-family: -apple-system, "SF Pro Display", "Helvetica Neue", Helvetica, sans-serif; color: #86868b; letter-spacing: -0.01em; padding: 16px 0 8px 0; margin: 0; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #424245; }
