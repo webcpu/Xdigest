@@ -41,31 +41,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         setupStatusItem()
-        NotificationCenter.default.addObserver(
-            self, selector: #selector(appBecameActive),
-            name: NSApplication.didBecomeActiveNotification, object: nil
-        )
         runSetupCheck()
     }
 
-    @objc private func appBecameActive() {
-        guard setupWindow != nil else { return }
-        runSetupCheck()
-    }
+    private var wizardModel: SetupWizardModel?
 
     private func runSetupCheck() {
-        let issues = checkSetup()
-        if issues.isEmpty {
-            setupWindow?.close()
-            setupWindow = nil
-            NSApp.setActivationPolicy(.accessory)
-            if serverHandle == nil { startServer() }
-        } else {
-            NSApp.setActivationPolicy(.regular)
-            setupWindow = showSetupWindow(issues: issues) { [weak self] in
-                self?.runSetupCheck()
-            }
+        NSApp.setActivationPolicy(.regular)
+        let (window, model) = showSetupWizard { [weak self] in
+            // Setup steps passed — start server (which triggers first generation)
+            if self?.serverHandle == nil { self?.startServer() }
         }
+        setupWindow = window
+        wizardModel = model
+    }
+
+    private func dismissWizard() {
+        wizardModel?.finishGenerating()
+        setupWindow?.close()
+        setupWindow = nil
+        wizardModel = nil
+        NSApp.setActivationPolicy(.accessory)
     }
 
     // MARK: - Menu Bar
@@ -118,6 +114,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 let outcome = try await generationQueue.submit(serverHandle: serverHandle)
                 let picks = outcome.digest.sections.first?.posts.count ?? 0
                 showNotification(title: "Xdigest", body: "\(picks) new posts")
+                if wizardModel != nil { dismissWizard() }
                 if thenOpen { openReader() }
             } catch {
                 showNotification(title: "Xdigest Error", body: error.localizedDescription)
