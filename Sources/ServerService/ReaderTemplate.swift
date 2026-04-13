@@ -65,7 +65,7 @@ video { max-width: 100%; border-radius: 16px; margin-top: 12px; }
 .video-thumb .play-btn { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 60px; height: 60px; background: rgba(0,0,0,0.6); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
 .video-thumb .play-btn::after { content: ''; display: block; width: 0; height: 0; border-style: solid; border-width: 12px 0 12px 22px; border-color: transparent transparent transparent #fff; margin-left: 4px; }
 .video-thumb:hover .play-btn { background: rgba(29,155,240,0.8); }
-#banner { display: none; background: rgba(29,155,240,0.95); color: #fff; text-align: center; padding: 10px; cursor: pointer; font-size: 14px; font-weight: 600; border-radius: 8px; margin: 8px 0; }
+#banner { display: none; background: rgba(29,155,240,0.95); color: #fff; text-align: center; padding: 10px; cursor: pointer; font-size: 14px; font-weight: 600; border-radius: 8px; margin: 12px 0 16px 0; }
 .search-bar { display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 200; padding: 10px 16px; background: rgba(54,59,64,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
 .search-row { display: flex; align-items: center; gap: 10px; }
 .search-cancel { background: none; border: none; color: #DEDEDE; font-size: 15px; cursor: pointer; padding: 8px; flex-shrink: 0; -webkit-tap-highlight-color: transparent; }
