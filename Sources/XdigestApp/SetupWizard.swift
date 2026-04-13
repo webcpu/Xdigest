@@ -263,114 +263,180 @@ struct SetupWizardView: View {
     @ObservedObject var model: SetupWizardModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Text("Xdigest Setup")
-                .font(.system(size: 20, weight: .semibold))
-
+        VStack(spacing: 0) {
             if model.generating {
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(spacing: 10) {
-                        ProgressView().controlSize(.small)
-                        Text("Generating your first digest...")
-                            .font(.system(size: 14, weight: .medium))
-                    }
-                    Text(model.generatingStatus)
-                        .font(.system(size: 13))
-                        .foregroundStyle(.secondary)
-                    Text("This only happens the first time. It usually takes 2-4 minutes.")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.tertiary)
-                }
+                generatingView
             } else if model.checking {
-                HStack(spacing: 8) {
-                    ProgressView().controlSize(.small)
-                    Text("Checking...")
-                        .foregroundStyle(.secondary)
-                        .font(.system(size: 13))
-                }
+                checkingView
             } else if let step = model.currentStep {
-                stepProgress
-
-                Text(step.title)
-                    .font(.system(size: 16, weight: .semibold))
-
-                Text(step.description)
-                    .font(.system(size: 13))
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                if let command = step.command {
-                    commandBlock(command)
-                }
-
-                if let label = step.actionLabel,
-                   let urlStr = step.actionUrl, let url = URL(string: urlStr) {
-                    Button(action: { openUrl(url) }) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "arrow.up.forward.square")
-                            Text(label)
-                        }
-                        .font(.system(size: 13, weight: .medium))
-                    }
-                    .buttonStyle(.link)
-                }
-
-                if model.stepPassed {
-                    HStack(spacing: 4) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
-                        Text("Done!")
-                            .foregroundStyle(.green)
-                            .font(.system(size: 13, weight: .medium))
-                    }
-                }
-
-                Divider()
-
-                HStack {
-                    Spacer()
-                    Button(model.isLastStep ? "Finish" : "Next") {
-                        model.next()
-                    }
-                    .controlSize(.large)
-                    .keyboardShortcut(.defaultAction)
-                    .disabled(!model.stepPassed)
-                }
+                stepView(step)
             }
         }
-        .padding(24)
-        .frame(width: 440, alignment: .leading)
-        .animation(.easeInOut(duration: 0.2), value: model.currentIndex)
-        .animation(.easeInOut(duration: 0.2), value: model.stepPassed)
+        .frame(width: 480, height: 400)
+        .animation(.easeInOut(duration: 0.3), value: model.currentIndex)
+        .animation(.easeInOut(duration: 0.3), value: model.stepPassed)
+        .animation(.easeInOut(duration: 0.3), value: model.generating)
     }
 
-    private var stepProgress: some View {
-        let total = model.steps.count
-        let current = model.currentIndex + 1
-        return Text("Step \(current) of \(total)")
-            .font(.system(size: 12))
-            .foregroundStyle(.secondary)
+    // MARK: - Generating Screen
+
+    private var generatingView: some View {
+        VStack(spacing: 24) {
+            Spacer()
+
+            Image(systemName: "sparkles")
+                .font(.system(size: 48))
+                .foregroundStyle(.blue)
+                .symbolEffect(.pulse)
+
+            Text("Almost ready")
+                .font(.system(size: 24, weight: .semibold))
+
+            VStack(spacing: 12) {
+                ProgressView()
+                    .progressViewStyle(.linear)
+                    .frame(width: 240)
+
+                Text(model.generatingStatus)
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+            }
+
+            Text("This only happens the first time.")
+                .font(.system(size: 12))
+                .foregroundStyle(.tertiary)
+
+            Spacer()
+        }
+        .padding(40)
+    }
+
+    // MARK: - Checking Screen
+
+    private var checkingView: some View {
+        VStack(spacing: 20) {
+            Spacer()
+            ProgressView()
+                .controlSize(.large)
+            Text("Checking requirements...")
+                .font(.system(size: 14))
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+        .padding(40)
+    }
+
+    // MARK: - Step Screen
+
+    private func stepView(_ step: SetupStep) -> some View {
+        VStack(spacing: 24) {
+            Spacer()
+
+            stepIcon(step)
+
+            Text(step.title)
+                .font(.system(size: 22, weight: .semibold))
+                .multilineTextAlignment(.center)
+
+            Text(step.description)
+                .font(.system(size: 14))
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: 360)
+
+            if let command = step.command {
+                commandBlock(command)
+            }
+
+            if let label = step.actionLabel,
+               let urlStr = step.actionUrl, let url = URL(string: urlStr) {
+                Button(action: { openUrl(url) }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.up.forward.square")
+                        Text(label)
+                    }
+                    .font(.system(size: 14, weight: .medium))
+                }
+                .buttonStyle(.link)
+            }
+
+            if model.stepPassed {
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                        .font(.system(size: 18))
+                    Text("Done!")
+                        .foregroundStyle(.green)
+                        .font(.system(size: 15, weight: .medium))
+                }
+                .transition(.scale.combined(with: .opacity))
+            }
+
+            Spacer()
+
+            VStack(spacing: 16) {
+                stepDots
+
+                Button(action: { model.next() }) {
+                    Text(model.isLastStep ? "Finish" : "Next")
+                        .font(.system(size: 14, weight: .medium))
+                        .frame(width: 200)
+                }
+                .controlSize(.large)
+                .keyboardShortcut(.defaultAction)
+                .disabled(!model.stepPassed)
+            }
+        }
+        .padding(40)
+    }
+
+    private func stepIcon(_ step: SetupStep) -> some View {
+        let name: String = switch step.id {
+        case "node": "shippingbox"
+        case "bird": "bird"
+        case "claude": "brain.head.profile"
+        case "claude-login": "person.badge.key"
+        case "fda": "lock.shield"
+        case "x-login": "globe"
+        default: "gear"
+        }
+        return Image(systemName: name)
+            .font(.system(size: 40))
+            .foregroundStyle(.blue)
+    }
+
+    private var stepDots: some View {
+        HStack(spacing: 8) {
+            ForEach(0..<model.steps.count, id: \.self) { i in
+                Circle()
+                    .fill(i == model.currentIndex ? Color.blue : Color.gray.opacity(0.3))
+                    .frame(width: 8, height: 8)
+            }
+        }
     }
 
     private func commandBlock(_ command: String) -> some View {
         HStack {
             Text(command)
-                .font(.system(size: 13, design: .monospaced))
+                .font(.system(size: 14, design: .monospaced))
                 .foregroundStyle(.primary)
                 .textSelection(.enabled)
-            Spacer()
+            Spacer(minLength: 16)
             Button(action: {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(command, forType: .string)
             }) {
                 Image(systemName: "doc.on.doc")
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
             }
             .buttonStyle(.borderless)
             .help("Copy to clipboard")
         }
-        .padding(10)
-        .background(RoundedRectangle(cornerRadius: 6).fill(Color(.controlBackgroundColor)))
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color(.controlBackgroundColor)))
+        .frame(maxWidth: 360)
     }
 }
 
@@ -394,12 +460,13 @@ func showSetupWizard(onComplete: @escaping () -> Void) -> (NSWindow, SetupWizard
     model.onComplete = onComplete
 
     let window = NSWindow(
-        contentRect: NSRect(x: 0, y: 0, width: 440, height: 320),
-        styleMask: [.titled, .closable],
+        contentRect: NSRect(x: 0, y: 0, width: 480, height: 400),
+        styleMask: [.titled, .closable, .fullSizeContentView],
         backing: .buffered,
         defer: false
     )
-    window.title = "Xdigest Setup"
+    window.titlebarAppearsTransparent = true
+    window.titleVisibility = .hidden
     window.contentView = NSHostingView(rootView: SetupWizardView(model: model))
     window.center()
     window.isReleasedWhenClosed = false

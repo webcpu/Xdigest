@@ -106,7 +106,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func performGeneration(thenOpen: Bool) {
-        guard !isGenerating else { return }
+        log("performGeneration called: isGenerating=\(isGenerating) serverHandle=\(serverHandle != nil)")
+        guard !isGenerating else { log("performGeneration: skipped (already generating)"); return }
         generatingCount += 1
         rebuildMenu()
         Task {
@@ -152,14 +153,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Auto-Open
 
     private func runAutoOpenFlow() {
-        if let digest = Pipeline.loadDigest(),
-           digest.sections.contains(where: { !$0.posts.isEmpty }) {
-            log("Today's digest has posts -- opening reader")
-            openReader()
+        let hasWizard = wizardModel != nil
+        let digest = Pipeline.loadDigest()
+        let hasPosts = digest?.sections.contains(where: { !$0.posts.isEmpty }) ?? false
+        log("autoOpen: wizard=\(hasWizard) hasPosts=\(hasPosts) sections=\(digest?.sections.count ?? 0)")
+        if hasWizard || !hasPosts {
+            log("Generating first digest")
+            performGeneration(thenOpen: true)
             return
         }
-        log("No today's posts -- generating then opening")
-        performGeneration(thenOpen: true)
+        log("Today's digest has posts -- opening reader")
+        openReader()
     }
 
     // MARK: - Firewall
