@@ -855,6 +855,7 @@ function forceSync() {
 // SSE in background tabs, so events may have been missed.
 document.addEventListener('visibilitychange', function() {
   if (document.visibilityState === 'visible') {
+    lastUserScrollTime = 0;  // Allow sync after returning from background
     forceSync();
     startEventStream();  // Reconnect SSE in case it died
   }
