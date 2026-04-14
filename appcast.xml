@@ -6,15 +6,15 @@
     <description>Xdigest release feed</description>
     <language>en</language>
     <item>
-      <title>Xdigest 0.10.0</title>
-      <sparkle:shortVersionString>0.10.0</sparkle:shortVersionString>
-      <sparkle:version>20260414.165942</sparkle:version>
-      <pubDate>Tue, 14 Apr 2026 17:00:53 +0000</pubDate>
+      <title>Xdigest 0.11.0</title>
+      <sparkle:shortVersionString>0.11.0</sparkle:shortVersionString>
+      <sparkle:version>20260414.171614</sparkle:version>
+      <pubDate>Tue, 14 Apr 2026 17:17:19 +0000</pubDate>
       <enclosure
-        url="https://github.com/webcpu/Xdigest/releases/download/v0.10.0/Xdigest.dmg"
-        sparkle:shortVersionString="0.10.0"
-        sparkle:version="20260414.165942"
-        sparkle:edSignature="tTuSxAdHken13y+NMy6sBrqINcfoIn4iTyqlS/mpinhlx+fYGESJmo4lpHzaKVJggUiMu/nuA4QEYDAXheJyBQ==" length="2880717"
+        url="https://github.com/webcpu/Xdigest/releases/download/v0.11.0/Xdigest.dmg"
+        sparkle:shortVersionString="0.11.0"
+        sparkle:version="20260414.171614"
+        sparkle:edSignature="FvCMX7bNpPiDg3h0JTCHf6j4ko0NKBaAZSDr2QkCgtKOIAOoCJAFnJ1fMsx8Is33WVzEBv2+Pv4+DTGOj44DDg==" length="2895746"
         type="application/octet-stream"/>
     </item>
   </channel>
