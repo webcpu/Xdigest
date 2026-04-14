@@ -81,19 +81,20 @@ func buildSetupSteps() -> [SetupStep] {
         actionUrl: "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_AllFiles",
         autoOpen: true,
         check: {
-            // Attempt to read bytes from Safari's containerized cookie database.
-            // Using Data(contentsOf:) throws a specific error if TCC blocks us,
-            // and registers the app with TCC so it appears in Full Disk Access
-            // settings. Using low-level open() would also work but String-based
-            // FileHandle does NOT register the app.
-            let home = FileManager.default.homeDirectoryForCurrentUser
+            // Use POSIX open() directly. Swift's try? can short-circuit without
+            // actually invoking the syscall, which prevents TCC from seeing the
+            // access attempt and registering the app in Full Disk Access settings.
+            // The raw open() syscall always reaches the kernel, always triggers
+            // TCC, so the app always appears in the settings list.
+            let home = FileManager.default.homeDirectoryForCurrentUser.path
             let paths = [
-                home.appendingPathComponent("Library/Containers/com.apple.Safari/Data/Library/Cookies/Cookies.binarycookies"),
-                home.appendingPathComponent("Library/Cookies/Cookies.binarycookies"),
+                "\(home)/Library/Containers/com.apple.Safari/Data/Library/Cookies/Cookies.binarycookies",
+                "\(home)/Library/Cookies/Cookies.binarycookies",
             ]
-            for url in paths {
-                // Data(contentsOf:) triggers TCC check. Success means FDA granted.
-                if (try? Data(contentsOf: url, options: [.mappedIfSafe])) != nil {
+            for path in paths {
+                let fd = open(path, O_RDONLY)
+                if fd >= 0 {
+                    close(fd)
                     return true
                 }
             }
