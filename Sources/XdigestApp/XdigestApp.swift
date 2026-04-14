@@ -187,17 +187,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Auto-Open
 
     private func runAutoOpenFlow() {
-        let hasWizard = wizardModel != nil
         let digest = Pipeline.loadDigest()
         let hasPosts = digest?.sections.contains(where: { !$0.posts.isEmpty }) ?? false
-        log("autoOpen: wizard=\(hasWizard) hasPosts=\(hasPosts) sections=\(digest?.sections.count ?? 0)")
-        if hasWizard || !hasPosts {
-            log("Generating first digest")
-            performGeneration(thenOpen: true)
+        log("autoOpen: wizard=\(wizardModel != nil) hasPosts=\(hasPosts)")
+        if hasPosts {
+            if wizardModel != nil { dismissWizard() }
+            openReader()
             return
         }
-        log("Today's digest has posts -- opening reader")
-        openReader()
+        log("No posts -- generating first digest")
+        performGeneration(thenOpen: true)
     }
 
     // MARK: - Firewall

@@ -399,6 +399,7 @@ struct SetupWizardView: View {
                 .keyboardShortcut(.defaultAction)
                 .disabled(!model.stepPassed)
             }
+            .padding(.bottom, 24)
         }
         .padding(40)
     }
