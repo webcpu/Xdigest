@@ -259,8 +259,28 @@ final class SetupWizardModel: ObservableObject {
         Task.detached { [weak self] in
             let passed = step.check()
             await MainActor.run {
-                if passed { self?.stepPassed = true }
+                guard let self, passed else { return }
+                self.stepPassed = true
+                // Full Disk Access: granting it doesn't apply to the running
+                // process. macOS requires a fresh launch so subprocesses like
+                // bird inherit the permission. Relaunch automatically.
+                if step.id == "fda" {
+                    self.relaunchApp()
+                }
             }
+        }
+    }
+
+    private func relaunchApp() {
+        guard let bundleURL = Bundle.main.bundleURL as URL? else {
+            NSApp.terminate(nil); return
+        }
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+        process.arguments = ["-n", bundleURL.path]
+        try? process.run()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            NSApp.terminate(nil)
         }
     }
 
