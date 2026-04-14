@@ -40,13 +40,22 @@ if [ -z "$IDENTITY" ]; then
     exit 1
 fi
 
+# Entitlements file (iCloud, hardened runtime, etc.)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ENTITLEMENTS="$SCRIPT_DIR/../Sources/XdigestApp/Xdigest.entitlements"
+
 # --force replaces any existing signature (ad-hoc from swift build).
 # --options runtime enables the hardened runtime (required for notarization).
 # Timestamp comes from Apple's timestamp server, required for notarization.
+ENTITLEMENTS_FLAG=""
+if [ -f "$ENTITLEMENTS" ]; then
+    ENTITLEMENTS_FLAG="--entitlements $ENTITLEMENTS"
+fi
+
 if [ "$SKIP_TIMESTAMP" = "1" ]; then
-    codesign --force --sign "$IDENTITY" --timestamp=none --options runtime "$TARGET"
+    codesign --force --sign "$IDENTITY" --timestamp=none --options runtime $ENTITLEMENTS_FLAG "$TARGET"
 else
-    codesign --force --sign "$IDENTITY" --timestamp --options runtime "$TARGET"
+    codesign --force --sign "$IDENTITY" --timestamp --options runtime $ENTITLEMENTS_FLAG "$TARGET"
 fi
 
 echo "Signed: $TARGET"
