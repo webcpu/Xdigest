@@ -320,9 +320,11 @@ var knownInstanceId = '';    // server instance ID we loaded; reload if it chang
 var inProgrammaticScroll = 0;  // counter, handles overlapping programmatic scrolls
 var lastUserScrollTime = 0;
 var IDLE_MS = 3000;          // don't interrupt active reading within this window
-var prefetchInFlight = false;
-var prefetchFiredOnce = false;
-var serverCanGenerate = true;
+// Prefetch state (immutable). Never mutate; only reassign via transitions.
+function makePrefetchState(firedOnce, inFlight, serverCanGenerate) {
+  return Object.freeze({firedOnce: firedOnce, inFlight: inFlight, serverCanGenerate: serverCanGenerate});
+}
+var prefetchState = makePrefetchState(false, false, true);
 
 // Extract post IDs from the timeline, in document order.
 function extractPostIds() {
@@ -707,27 +709,46 @@ window.addEventListener('scroll', function() {
 
 var throttledCheckPrefetch = throttle(checkPrefetch, 2000);
 
-// Prefetch: when the user scrolls into the latest section, silently
-// trigger a background generation so the next batch is ready when they
-// finish reading. Fires once per section. Ignores programmatic scrolls
-// (cross-device sync) to prevent duplicate triggers.
-function checkPrefetch() {
-  if (prefetchFiredOnce || prefetchInFlight || !serverCanGenerate) return;
+// ---- Prefetch: pure predicates ----
+function canFirePrefetch(state) {
+  return !state.firedOnce && !state.inFlight && state.serverCanGenerate;
+}
+
+function isSectionVisible(rect, winH) {
+  return rect.bottom >= 0 && rect.top <= winH;
+}
+
+// ---- Prefetch: pure DOM reader ----
+function readLatestSectionRect(tl) {
   var sections = tl.querySelectorAll('details.section');
-  if (sections.length === 0) return;
+  if (sections.length === 0) return null;
   var latest = sections[0];
+  if (latest.querySelectorAll('div[data-post-id]').length === 0) return null;
+  return latest.getBoundingClientRect();
+}
 
-  var posts = latest.querySelectorAll('div[data-post-id]');
-  if (posts.length === 0) return;
-  var rect = latest.getBoundingClientRect();
-  if (rect.bottom < 0 || rect.top > window.innerHeight) return;
+// ---- Prefetch: pure state transitions ----
+function withFiring(state) {
+  return makePrefetchState(true, true, state.serverCanGenerate);
+}
 
-  prefetchFiredOnce = true;
-  prefetchInFlight = true;
-  fetch('/api/generate', {method: 'POST'}).then(function() {
-    prefetchInFlight = false;
-  }).catch(function() {
-    prefetchInFlight = false;
+function withFinished(state) {
+  return makePrefetchState(state.firedOnce, false, state.serverCanGenerate);
+}
+
+function withServerPermission(state, canGen) {
+  return makePrefetchState(state.firedOnce, state.inFlight, canGen);
+}
+
+// ---- Prefetch: orchestrator (the only place that commits new state) ----
+function checkPrefetch() {
+  if (!canFirePrefetch(prefetchState)) return;
+  var rect = readLatestSectionRect(tl);
+  if (!rect || !isSectionVisible(rect, window.innerHeight)) return;
+
+  prefetchState = withFiring(prefetchState);
+  fetch('/api/generate', {method: 'POST'}).finally(function() {
+    prefetchState = withFinished(prefetchState);
   });
 }
 
@@ -767,7 +788,7 @@ function absorbServerState(d) {
   localVersion = (typeof d.version === 'number') ? d.version : localVersion;
   serverPosition = d.lastSeenPostId || '';
   serverFraction = (typeof d.lastSeenFraction === 'number') ? d.lastSeenFraction : 0;
-  if (typeof d.canGenerate === 'boolean') serverCanGenerate = d.canGenerate;
+  if (typeof d.canGenerate === 'boolean') prefetchState = withServerPermission(prefetchState, d.canGenerate);
 }
 
 // Does our current viewport already match the server's anchor?
