@@ -50,17 +50,8 @@ public func loadTasteProfile(
         return cached.profile
     }
 
-    // Try restoring from iCloud before expensive extraction
-    let localFile = cacheDir.appendingPathComponent(profileFileName)
-    if restoreFromCloud(fileName: profileFileName, to: localFile),
-       let cached = readProfileCache(from: cacheDir),
-       cached.bookmarkLatestId == latestId {
-        return cached.profile
-    }
-
     let profile = try await extractProfile(from: bookmarks)
     try saveProfileCache(bookmarkLatestId: latestId, profile: profile, to: cacheDir)
-    syncToCloud(localFile: localFile, fileName: profileFileName)
     return profile
 }
 

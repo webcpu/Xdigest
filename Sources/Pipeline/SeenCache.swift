@@ -20,8 +20,17 @@ public func saveSeen(_ ids: Set<String>, to cacheDir: URL = defaultCacheDir()) t
     try data.write(to: file)
 }
 
-/// Default cache directory: ~/.cache/xdigest/
+/// Data directory: iCloud container if available, otherwise ~/.cache/xdigest/.
+/// Using iCloud as the primary store means all data syncs automatically
+/// across Macs signed into the same Apple ID. No explicit sync logic needed.
 public func defaultCacheDir() -> URL {
-    FileManager.default.homeDirectoryForCurrentUser
+    if let container = FileManager.default.url(
+        forUbiquityContainerIdentifier: "iCloud.com.webcpu.xdigest"
+    ) {
+        let docs = container.appendingPathComponent("Documents")
+        try? FileManager.default.createDirectory(at: docs, withIntermediateDirectories: true)
+        return docs
+    }
+    return FileManager.default.homeDirectoryForCurrentUser
         .appendingPathComponent(".cache/xdigest")
 }
