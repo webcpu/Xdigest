@@ -321,6 +321,7 @@ var inProgrammaticScroll = 0;  // counter, handles overlapping programmatic scro
 var lastUserScrollTime = 0;
 var IDLE_MS = 3000;          // don't interrupt active reading within this window
 var prefetchInFlight = false;
+var prefetchFiredOnce = false;
 var serverCanGenerate = true;
 
 // Extract post IDs from the timeline, in document order.
@@ -711,7 +712,7 @@ var throttledCheckPrefetch = throttle(checkPrefetch, 2000);
 // finish reading. Fires once per section. Ignores programmatic scrolls
 // (cross-device sync) to prevent duplicate triggers.
 function checkPrefetch() {
-  if (prefetchInFlight || !serverCanGenerate) return;
+  if (prefetchFiredOnce || prefetchInFlight || !serverCanGenerate) return;
   var sections = tl.querySelectorAll('details.section');
   if (sections.length === 0) return;
   var latest = sections[0];
@@ -721,6 +722,7 @@ function checkPrefetch() {
   var rect = latest.getBoundingClientRect();
   if (rect.bottom < 0 || rect.top > window.innerHeight) return;
 
+  prefetchFiredOnce = true;
   prefetchInFlight = true;
   fetch('/api/generate', {method: 'POST'}).then(function() {
     prefetchInFlight = false;
