@@ -115,6 +115,10 @@ func buildSetupSteps() -> [SetupStep] {
             process.arguments = ["home", "-n", "1", "--plain"]
             process.standardOutput = FileHandle.nullDevice
             process.standardError = FileHandle.nullDevice
+            // App bundles inherit a minimal PATH that omits /opt/homebrew/bin.
+            // bird is a Node.js script (shebang #!/usr/bin/env node), so its
+            // `env node` lookup fails without a richer PATH.
+            process.environment = enrichedEnvironment()
             do {
                 try process.run()
                 process.waitUntilExit()
@@ -126,6 +130,24 @@ func buildSetupSteps() -> [SetupStep] {
     return steps
 }
 
+/// Returns a process environment with a rich PATH so that shebangs
+/// (#!/usr/bin/env node) can find the interpreter. App bundles launched
+/// from Finder have a minimal PATH that excludes common install dirs.
+func enrichedEnvironment() -> [String: String] {
+    var env = ProcessInfo.processInfo.environment
+    let home = NSHomeDirectory()
+    let extraPaths = [
+        "\(home)/.local/bin",
+        "/opt/homebrew/bin",
+        "/usr/local/bin",
+        "\(home)/.npm-global/bin",
+        "\(home)/.bun/bin",
+    ]
+    let currentPath = env["PATH"] ?? "/usr/bin:/bin"
+    env["PATH"] = (extraPaths + [currentPath]).joined(separator: ":")
+    return env
+}
+
 /// Synchronous Claude login check (for background thread).
 private func checkClaudeLoggedIn(at path: String, timeout: TimeInterval = 3.0) -> Bool {
     let process = Process()
@@ -134,6 +156,7 @@ private func checkClaudeLoggedIn(at path: String, timeout: TimeInterval = 3.0) -
     process.arguments = ["auth", "status"]
     process.standardOutput = outPipe
     process.standardError = FileHandle.nullDevice
+    process.environment = enrichedEnvironment()
 
     let sem = DispatchSemaphore(value: 0)
     process.terminationHandler = { _ in sem.signal() }
@@ -304,7 +327,7 @@ struct SetupWizardView: View {
                 stepView(step)
             }
         }
-        .frame(width: 480, height: 400)
+        .frame(width: 480, height: 460)
         .animation(.easeInOut(duration: 0.3), value: model.currentIndex)
         .animation(.easeInOut(duration: 0.3), value: model.stepPassed)
         .animation(.easeInOut(duration: 0.3), value: model.generating)
@@ -407,7 +430,7 @@ struct SetupWizardView: View {
 
             Spacer()
 
-            VStack(spacing: 16) {
+            VStack(spacing: 20) {
                 stepDots
 
                 Button(action: { model.next() }) {
@@ -419,9 +442,10 @@ struct SetupWizardView: View {
                 .keyboardShortcut(.defaultAction)
                 .disabled(!model.stepPassed)
             }
-            .padding(.bottom, 24)
         }
-        .padding(40)
+        .padding(.horizontal, 40)
+        .padding(.top, 40)
+        .padding(.bottom, 48)
     }
 
     private func stepIcon(_ step: SetupStep) -> some View {

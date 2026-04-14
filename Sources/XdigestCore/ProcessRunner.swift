@@ -46,6 +46,14 @@ public func runProcess(
         process.arguments = arguments
         process.standardOutput = stdoutHandle
         process.standardError = stderrHandle
+        // Enrich PATH so shebang scripts (e.g. bird uses env node) can find
+        // their interpreter. App bundles launched from Finder have minimal PATH.
+        var env = ProcessInfo.processInfo.environment
+        let home = NSHomeDirectory()
+        let extra = ["\(home)/.local/bin", "/opt/homebrew/bin", "/usr/local/bin",
+                     "\(home)/.npm-global/bin", "\(home)/.bun/bin"]
+        env["PATH"] = (extra + [env["PATH"] ?? "/usr/bin:/bin"]).joined(separator: ":")
+        process.environment = env
 
         if let stdinFile {
             process.standardInput = try? FileHandle(forReadingFrom: stdinFile)
