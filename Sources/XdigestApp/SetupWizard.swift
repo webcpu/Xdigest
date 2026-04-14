@@ -81,11 +81,22 @@ func buildSetupSteps() -> [SetupStep] {
         actionUrl: "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_AllFiles",
         autoOpen: true,
         check: {
+            // Actually read a few bytes to force a real TCC check.
+            // isReadableFile() returns cached state and may lag after
+            // the user toggles the permission in System Settings.
             let home = FileManager.default.homeDirectoryForCurrentUser.path
-            let container = "\(home)/Library/Containers/com.apple.Safari/Data/Library/Cookies/Cookies.binarycookies"
-            let legacy = "\(home)/Library/Cookies/Cookies.binarycookies"
-            return FileManager.default.isReadableFile(atPath: container)
-                || FileManager.default.isReadableFile(atPath: legacy)
+            let paths = [
+                "\(home)/Library/Containers/com.apple.Safari/Data/Library/Cookies/Cookies.binarycookies",
+                "\(home)/Library/Cookies/Cookies.binarycookies",
+            ]
+            for path in paths {
+                if let handle = FileHandle(forReadingAtPath: path) {
+                    _ = try? handle.read(upToCount: 1)
+                    try? handle.close()
+                    return true
+                }
+            }
+            return false
         }
     ))
 
