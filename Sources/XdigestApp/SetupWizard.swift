@@ -81,18 +81,19 @@ func buildSetupSteps() -> [SetupStep] {
         actionUrl: "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_AllFiles",
         autoOpen: true,
         check: {
-            // Actually read a few bytes to force a real TCC check.
-            // isReadableFile() returns cached state and may lag after
-            // the user toggles the permission in System Settings.
-            let home = FileManager.default.homeDirectoryForCurrentUser.path
+            // Attempt to read bytes from Safari's containerized cookie database.
+            // Using Data(contentsOf:) throws a specific error if TCC blocks us,
+            // and registers the app with TCC so it appears in Full Disk Access
+            // settings. Using low-level open() would also work but String-based
+            // FileHandle does NOT register the app.
+            let home = FileManager.default.homeDirectoryForCurrentUser
             let paths = [
-                "\(home)/Library/Containers/com.apple.Safari/Data/Library/Cookies/Cookies.binarycookies",
-                "\(home)/Library/Cookies/Cookies.binarycookies",
+                home.appendingPathComponent("Library/Containers/com.apple.Safari/Data/Library/Cookies/Cookies.binarycookies"),
+                home.appendingPathComponent("Library/Cookies/Cookies.binarycookies"),
             ]
-            for path in paths {
-                if let handle = FileHandle(forReadingAtPath: path) {
-                    _ = try? handle.read(upToCount: 1)
-                    try? handle.close()
+            for url in paths {
+                // Data(contentsOf:) triggers TCC check. Success means FDA granted.
+                if (try? Data(contentsOf: url, options: [.mappedIfSafe])) != nil {
                     return true
                 }
             }
