@@ -47,9 +47,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var wizardModel: SetupWizardModel?
 
     private func runSetupCheck() {
+        // Fast path: if all setup steps pass, skip the wizard entirely.
+        // The wizard is for first-time setup; subsequent launches shouldn't see it.
+        Task.detached { [weak self] in
+            let allPassed = buildSetupSteps().allSatisfy { $0.check() }
+            await MainActor.run {
+                guard let self else { return }
+                if allPassed {
+                    if self.serverHandle == nil { self.startServer() }
+                } else {
+                    self.showWizard()
+                }
+            }
+        }
+    }
+
+    private func showWizard() {
         NSApp.setActivationPolicy(.regular)
         let (window, model) = showSetupWizard { [weak self] in
-            // Setup steps passed — start server (which triggers first generation)
             if self?.serverHandle == nil { self?.startServer() }
         }
         setupWindow = window
