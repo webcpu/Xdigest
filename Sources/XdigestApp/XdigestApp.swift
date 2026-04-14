@@ -153,6 +153,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 if thenOpen { openReader() }
             } catch {
                 showNotification(title: "Xdigest Error", body: error.localizedDescription)
+                // Generation failed — likely a permission (FDA revoked) or
+                // install issue. Re-run setup check; if any step fails, the
+                // wizard will appear to guide the user to the fix.
+                runSetupCheck()
             }
             generatingCount -= 1
             rebuildMenu()
@@ -218,7 +222,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Pipeline Sync Bridge
 
     private nonisolated func runPipelineSync() -> GenerateResult {
-        generationQueue.submitSync(
+        let result = generationQueue.submitSync(
             prepare: { await MainActor.run {
                 self.generatingCount += 1
                 self.rebuildMenu()
@@ -230,6 +234,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }},
             log: { self.log($0) }
         )
+        if result.error != nil {
+            Task { @MainActor in self.runSetupCheck() }
+        }
+        return result
     }
 
     // MARK: - Logging
