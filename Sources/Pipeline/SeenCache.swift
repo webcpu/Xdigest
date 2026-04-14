@@ -20,8 +20,8 @@ public func saveSeen(_ ids: Set<String>, to cacheDir: URL = defaultCacheDir()) t
     try data.write(to: file)
 }
 
-/// Default cache directory: ~/.cache/xdigest/
+/// App data directory: ~/Library/Application Support/Xdigest/
 public func defaultCacheDir() -> URL {
-    FileManager.default.homeDirectoryForCurrentUser
-        .appendingPathComponent(".cache/xdigest")
+    let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+    return appSupport.appendingPathComponent("Xdigest")
 }
