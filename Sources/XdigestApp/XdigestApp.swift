@@ -41,6 +41,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         setupStatusItem()
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(appBecameActive),
+            name: NSApplication.didBecomeActiveNotification, object: nil
+        )
+        runSetupCheck()
+    }
+
+    @objc private func appBecameActive() {
+        // User switched back to the app. Re-check setup in case a permission
+        // (Full Disk Access, etc.) was revoked while we were inactive.
+        // If the wizard is already showing, its own polling handles this.
+        guard wizardModel == nil else { return }
         runSetupCheck()
     }
 
