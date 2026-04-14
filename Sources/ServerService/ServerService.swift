@@ -67,7 +67,7 @@ public final class DigestState: @unchecked Sendable {
     /// broadcasts can interleave on the wire, so SSE clients always see
     /// versions in strictly monotonic order. tmux gets this for free by
     /// having a single libevent loop; we emulate it with a serial queue.
-    private let writeQueue = DispatchQueue(label: "com.xdigest.digest-state-writes")
+    private let writeQueue = DispatchQueue(label: "com.webcpu.xdigest.digest-state-writes")
     let onGenerate: GenerateHandler?
     let onPositionChange: PositionHandler?
     let onDigestChange: DigestChangeHandler?

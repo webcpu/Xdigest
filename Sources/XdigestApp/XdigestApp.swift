@@ -35,7 +35,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Lifecycle
 
     func applicationWillFinishLaunching(_ notification: Notification) {
-        terminateOtherInstances(bundleIdentifier: "com.xdigest.app")
+        terminateOtherInstances(bundleIdentifier: "com.webcpu.xdigest")
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
