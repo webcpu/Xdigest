@@ -130,21 +130,13 @@ func buildSetupSteps() -> [SetupStep] {
     return steps
 }
 
-/// Returns a process environment with a rich PATH so that shebangs
-/// (#!/usr/bin/env node) can find the interpreter. App bundles launched
-/// from Finder have a minimal PATH that excludes common install dirs.
+/// Returns a process environment with the user's login-shell PATH so that
+/// shebang scripts (e.g. bird uses `#!/usr/bin/env node`) can find their
+/// interpreter. App bundles have a minimal PATH that excludes common tool
+/// installers.
 func enrichedEnvironment() -> [String: String] {
     var env = ProcessInfo.processInfo.environment
-    let home = NSHomeDirectory()
-    let extraPaths = [
-        "\(home)/.local/bin",
-        "/opt/homebrew/bin",
-        "/usr/local/bin",
-        "\(home)/.npm-global/bin",
-        "\(home)/.bun/bin",
-    ]
-    let currentPath = env["PATH"] ?? "/usr/bin:/bin"
-    env["PATH"] = (extraPaths + [currentPath]).joined(separator: ":")
+    env["PATH"] = loginShellPath()
     return env
 }
 

@@ -20,6 +20,41 @@ import Foundation
 /// The shell fallback uses `-i -l -c` (interactive + login + command) so
 /// it sources `.zshrc` too, catching tools installed in non-standard
 /// locations that only `.zshrc` knows about.
+/// Returns the user's PATH as seen by their login shell. Cached after first
+/// lookup because spawning a shell is relatively expensive (~100ms).
+/// Subprocesses should use this so shebang scripts (e.g. bird uses
+/// `/usr/bin/env node`) can find their interpreter.
+public func loginShellPath() -> String {
+    if let cached = _cachedLoginShellPath { return cached }
+    let shell = ProcessInfo.processInfo.environment["SHELL"] ?? "/bin/zsh"
+    let process = Process()
+    let pipe = Pipe()
+    process.executableURL = URL(fileURLWithPath: shell)
+    process.arguments = ["-i", "-l", "-c", "echo $PATH"]
+    process.standardOutput = pipe
+    process.standardError = FileHandle.nullDevice
+    let fallback = ProcessInfo.processInfo.environment["PATH"] ?? "/usr/bin:/bin"
+    do {
+        try process.run()
+        process.waitUntilExit()
+    } catch {
+        _cachedLoginShellPath = fallback
+        return fallback
+    }
+    guard process.terminationStatus == 0 else {
+        _cachedLoginShellPath = fallback
+        return fallback
+    }
+    let data = pipe.fileHandleForReading.readDataToEndOfFile()
+    let path = (String(data: data, encoding: .utf8) ?? fallback)
+        .trimmingCharacters(in: .whitespacesAndNewlines)
+    let result = path.isEmpty ? fallback : path
+    _cachedLoginShellPath = result
+    return result
+}
+
+nonisolated(unsafe) private var _cachedLoginShellPath: String?
+
 public func findExecutable(named name: String) -> String? {
     // Fast path: check common install directories directly.
     let home = NSHomeDirectory()
