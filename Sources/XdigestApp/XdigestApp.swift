@@ -112,7 +112,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         rebuildMenu()
         Task {
             do {
-                let outcome = try await generationQueue.submit(serverHandle: serverHandle)
+                let outcome = try await generationQueue.submit(
+                    serverHandle: serverHandle,
+                    onProgress: { [weak self] status in
+                        Task { @MainActor in
+                            self?.wizardModel?.generatingStatus = status
+                        }
+                    }
+                )
                 let picks = outcome.digest.sections.first?.posts.count ?? 0
                 showNotification(title: "Xdigest", body: "\(picks) new posts")
                 if wizardModel != nil { dismissWizard() }

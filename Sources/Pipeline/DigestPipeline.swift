@@ -21,18 +21,23 @@ public func generate(
     currentDigest: Digest?,
     count: Int = 100,
     topN: Int = 10,
-    cacheDir: URL = defaultCacheDir()
+    cacheDir: URL = defaultCacheDir(),
+    onProgress: (@Sendable (String) -> Void)? = nil
 ) async throws -> GenerateOutcome {
     let bird = try BirdService()
     let scorer = try ScorerService()
 
     let seen = loadSeen(from: cacheDir)
 
+    onProgress?("Fetching your timeline...")
     let tweets = try await withRetry { try await bird.fetchHome(count: count) }
+    onProgress?("Loading your taste profile...")
     let tasteProfile = try await withRetry { try await loadTasteProfile(using: bird, cacheDir: cacheDir) }
+    onProgress?("Scoring posts against your taste...")
     let scored = try await withRetry {
         try await scorer.score(tweets, tasteProfile: tasteProfile, topN: topN, seen: seen)
     }
+    onProgress?("Assembling your digest...")
     let newDigest = assemble(scored)
 
     let newIds = renderedIds(from: newDigest)

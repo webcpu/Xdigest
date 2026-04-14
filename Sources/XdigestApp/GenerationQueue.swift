@@ -22,13 +22,16 @@ private final class ResultBox: @unchecked Sendable {
 /// `saveSeen` throws, we log and continue -- the generation is still
 /// valid, but the next run may re-pick some of these tweets until the
 /// disk write succeeds.
-private func runGenerationCycle(serverHandle: ServerHandle?) async throws -> GenerateOutcome {
+private func runGenerationCycle(
+    serverHandle: ServerHandle?,
+    onProgress: (@Sendable (String) -> Void)? = nil
+) async throws -> GenerateOutcome {
     // 1. Read currentDigest AFTER the predecessor's updateDigest has
     //    committed, so our merge sees the latest state.
     let currentDigest = serverHandle.map { ServerService.currentDigest($0) }
 
     // 2. Run the expensive pipeline.
-    let outcome = try await generate(currentDigest: currentDigest)
+    let outcome = try await generate(currentDigest: currentDigest, onProgress: onProgress)
 
     // 3. Write seen cache BEFORE the next submission reads it. If the
     //    disk write fails, log visibly -- silent failure here causes
@@ -76,11 +79,14 @@ private func runGenerationCycle(serverHandle: ServerHandle?) async throws -> Gen
 actor GenerationQueue {
     private var current: Task<GenerateOutcome, Error>?
 
-    func submit(serverHandle: ServerHandle?) async throws -> GenerateOutcome {
+    func submit(
+        serverHandle: ServerHandle?,
+        onProgress: (@Sendable (String) -> Void)? = nil
+    ) async throws -> GenerateOutcome {
         let previous = current
         let task = Task.detached { () -> GenerateOutcome in
             _ = await previous?.result
-            return try await runGenerationCycle(serverHandle: serverHandle)
+            return try await runGenerationCycle(serverHandle: serverHandle, onProgress: onProgress)
         }
         current = task
         return try await task.value
