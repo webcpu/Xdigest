@@ -48,9 +48,22 @@ public func generate(
     return GenerateOutcome(digest: merged, seenIds: updatedSeen)
 }
 
-/// Prepends new sections to an existing digest.
+/// Prepends new sections to an existing digest. Drops posts from the new
+/// section whose text content already appears in existing sections --
+/// catches legitimate content duplicates (reposts with different IDs,
+/// account re-shares) that the by-ID seen cache can't detect.
 private func mergeDigests(new: Digest, existing: Digest?) -> Digest {
     guard let existing else { return new }
-    let allSections = new.sections + existing.sections
-    return Digest(date: new.date, sections: allSections)
+    let existingTexts = Set(existing.sections.flatMap { $0.posts }.map { normalizedText($0.tweet.text) })
+    let dedupedSections = new.sections.compactMap { section -> DigestSection? in
+        let kept = section.posts.filter { !existingTexts.contains(normalizedText($0.tweet.text)) }
+        return kept.isEmpty ? nil : DigestSection(timestamp: section.timestamp, posts: kept)
+    }
+    return Digest(date: new.date, sections: dedupedSections + existing.sections)
+}
+
+private func normalizedText(_ text: String) -> String {
+    text.trimmingCharacters(in: .whitespacesAndNewlines)
+        .replacingOccurrences(of: " +", with: " ", options: .regularExpression)
+        .lowercased()
 }
