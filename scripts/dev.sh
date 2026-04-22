@@ -23,12 +23,21 @@ for arg in "$@"; do
 done
 
 BINARY="$PROJECT_DIR/.build/$CONFIG/Xdigest"
+SOURCE_INFO_PLIST="$PROJECT_DIR/Sources/XdigestApp/Info.plist"
 
 cd "$PROJECT_DIR"
 
 if [ "$RUN_TESTS" = "1" ]; then
     echo "==> Running tests"
     swift test 2>&1 | grep -E "Test run|failed|error:" | tail -5
+fi
+
+if [ -x "$BINARY" ] && [ "$SOURCE_INFO_PLIST" -nt "$BINARY" ]; then
+    echo "==> Info.plist changed since last link; cleaning build artifacts"
+    # Package.swift injects Info.plist via linker flags, but SwiftPM does
+    # not track that excluded plist as a build input. Force a relink when
+    # the plist is newer so the embedded version metadata stays correct.
+    swift package clean
 fi
 
 echo "==> Building ($CONFIG)"
