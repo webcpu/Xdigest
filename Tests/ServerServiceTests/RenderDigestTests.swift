@@ -128,6 +128,14 @@ func renderSectionBasic() {
     #expect(html.contains("Second"))
 }
 
+@Test("Renders section with server-owned section key attribute")
+func renderSectionIncludesSectionKey() {
+    let section = DigestSection(timestamp: "14:30", posts: [makeScored(id: "1", text: "First")])
+    let html = renderSection(section, date: "2026-04-10")
+
+    #expect(html.contains("data-section-key=\"2026-04-10|14:30|1\""))
+}
+
 @Test("Renders section with open attribute by default")
 func renderSectionOpen() {
     let section = DigestSection(timestamp: "10:00", posts: [makeScored(id: "1", text: "Hi")])

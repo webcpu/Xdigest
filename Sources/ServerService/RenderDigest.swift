@@ -122,10 +122,16 @@ public func renderPost(_ post: ScoredPost) -> String {
 }
 
 /// Renders a digest section as a foldable `<details>` element.
-public func renderSection(_ section: DigestSection) -> String {
+public func renderSection(_ section: DigestSection, date: String? = nil) -> String {
     let postsHTML = section.posts.map { renderPost($0) }.joined(separator: "\n")
+    let keyAttr: String
+    if let date, let key = sectionKey(for: section, date: date) {
+        keyAttr = " data-section-key=\"\(escapeHTML(key))\""
+    } else {
+        keyAttr = ""
+    }
     return """
-    <details class="section" open>\
+    <details class="section"\(keyAttr) open>\
     <summary class="section-time">\(escapeHTML(section.timestamp))</summary>\
     \(postsHTML)\
     </details>
@@ -134,7 +140,7 @@ public func renderSection(_ section: DigestSection) -> String {
 
 /// Renders a full digest as an HTML fragment (sections concatenated).
 public func renderDigest(_ digest: Digest) -> String {
-    digest.sections.map { renderSection($0) }.joined(separator: "\n")
+    digest.sections.map { renderSection($0, date: digest.date) }.joined(separator: "\n")
 }
 
 /// Returns the complete reader HTML page with digest content embedded.

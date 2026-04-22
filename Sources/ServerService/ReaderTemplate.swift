@@ -320,11 +320,12 @@ var knownInstanceId = '';    // server instance ID we loaded; reload if it chang
 var inProgrammaticScroll = 0;  // counter, handles overlapping programmatic scrolls
 var lastUserScrollTime = 0;
 var IDLE_MS = 3000;          // don't interrupt active reading within this window
-// Prefetch state (immutable). Never mutate; only reassign via transitions.
-function makePrefetchState(firedOnce, inFlight, serverCanGenerate) {
-  return Object.freeze({firedOnce: firedOnce, inFlight: inFlight, serverCanGenerate: serverCanGenerate});
+// Prefetch state (immutable). Server owns the claimed section key; clients
+// only mirror it so multiple devices don't auto-trigger the same section.
+function makePrefetchState(claimedSectionKey, inFlight, serverCanGenerate) {
+  return Object.freeze({claimedSectionKey: claimedSectionKey, inFlight: inFlight, serverCanGenerate: serverCanGenerate});
 }
-var prefetchState = makePrefetchState(false, false, true);
+var prefetchState = makePrefetchState('', false, true);
 
 // Extract post IDs from the timeline, in document order.
 function extractPostIds() {
@@ -710,8 +711,11 @@ window.addEventListener('scroll', function() {
 var throttledCheckPrefetch = throttle(checkPrefetch, 2000);
 
 // ---- Prefetch: pure predicates ----
-function canFirePrefetch(state) {
-  return !state.firedOnce && !state.inFlight && state.serverCanGenerate;
+function canFirePrefetch(state, latestSectionKey) {
+  return !!latestSectionKey
+    && latestSectionKey !== state.claimedSectionKey
+    && !state.inFlight
+    && state.serverCanGenerate;
 }
 
 function isSectionVisible(rect, winH) {
@@ -719,35 +723,52 @@ function isSectionVisible(rect, winH) {
 }
 
 // ---- Prefetch: pure DOM reader ----
-function readLatestSectionRect(tl) {
+function readLatestSectionInfo(tl) {
   var sections = tl.querySelectorAll('details.section');
   if (sections.length === 0) return null;
   var latest = sections[0];
   if (latest.querySelectorAll('div[data-post-id]').length === 0) return null;
-  return latest.getBoundingClientRect();
+  var sectionKey = latest.getAttribute('data-section-key') || '';
+  if (!sectionKey) return null;
+  return { key: sectionKey, rect: latest.getBoundingClientRect() };
 }
 
 // ---- Prefetch: pure state transitions ----
 function withFiring(state) {
-  return makePrefetchState(true, true, state.serverCanGenerate);
+  return makePrefetchState(state.claimedSectionKey, true, state.serverCanGenerate);
 }
 
 function withFinished(state) {
-  return makePrefetchState(state.firedOnce, false, state.serverCanGenerate);
+  return makePrefetchState(state.claimedSectionKey, false, state.serverCanGenerate);
 }
 
 function withServerPermission(state, canGen) {
-  return makePrefetchState(state.firedOnce, state.inFlight, canGen);
+  return makePrefetchState(state.claimedSectionKey, state.inFlight, canGen);
+}
+
+function withClaimedSectionKey(state, sectionKey) {
+  return makePrefetchState(sectionKey, state.inFlight, state.serverCanGenerate);
 }
 
 // ---- Prefetch: orchestrator (the only place that commits new state) ----
 function checkPrefetch() {
-  if (!canFirePrefetch(prefetchState)) return;
-  var rect = readLatestSectionRect(tl);
-  if (!rect || !isSectionVisible(rect, window.innerHeight)) return;
+  var latest = readLatestSectionInfo(tl);
+  if (!latest) return;
+  if (!canFirePrefetch(prefetchState, latest.key)) return;
+  if (!isSectionVisible(latest.rect, window.innerHeight)) return;
 
   prefetchState = withFiring(prefetchState);
-  fetch('/api/generate', {method: 'POST'}).finally(function() {
+  fetch('/api/generate', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ mode: 'prefetch', sectionKey: latest.key })
+  }).then(function(r) {
+    if (!r.ok) throw new Error('prefetch failed');
+    return r.json();
+  }).then(function() {
+    prefetchState = withClaimedSectionKey(prefetchState, latest.key);
+  }).catch(function() {
+  }).finally(function() {
     prefetchState = withFinished(prefetchState);
   });
 }
@@ -789,6 +810,7 @@ function absorbServerState(d) {
   serverPosition = d.lastSeenPostId || '';
   serverFraction = (typeof d.lastSeenFraction === 'number') ? d.lastSeenFraction : 0;
   if (typeof d.canGenerate === 'boolean') prefetchState = withServerPermission(prefetchState, d.canGenerate);
+  if (typeof d.autoPrefetchSectionKey === 'string') prefetchState = withClaimedSectionKey(prefetchState, d.autoPrefetchSectionKey);
 }
 
 // Does our current viewport already match the server's anchor?

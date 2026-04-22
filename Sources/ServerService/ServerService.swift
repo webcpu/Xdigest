@@ -51,10 +51,8 @@ public final class DigestState: @unchecked Sendable {
         var lastSeenFraction: Double
         var version: Int
         var generating: Bool = false
-        var lastGenerateTime: TimeInterval = 0
+        var autoPrefetchSectionKey: String = ""
     }
-
-    private static let generateCooldown: TimeInterval = 120
 
     private let state: Mutex<State>
     private let sseClients = Mutex<[NWConnection]>([])
@@ -122,6 +120,7 @@ public final class DigestState: @unchecked Sendable {
         public let lastSeenPostId: String
         public let lastSeenFraction: Double
         public let version: Int
+        public let autoPrefetchSectionKey: String
     }
 
     func snapshot() -> Snapshot {
@@ -131,7 +130,8 @@ public final class DigestState: @unchecked Sendable {
                 mtime: $0.mtime,
                 lastSeenPostId: $0.lastSeenPostId,
                 lastSeenFraction: $0.lastSeenFraction,
-                version: $0.version
+                version: $0.version,
+                autoPrefetchSectionKey: $0.autoPrefetchSectionKey
             )
         }
     }
@@ -160,27 +160,64 @@ public final class DigestState: @unchecked Sendable {
         }
     }
 
-    /// Atomically claim the generation slot. Returns true if claimed.
-    func tryClaimGenerate() -> Bool {
+    enum GenerateClaim {
+        case accepted
+        case skipped(String)
+    }
+
+    enum GenerateRequest {
+        case manual
+        case prefetch(sectionKey: String)
+    }
+
+    /// Atomically claim the generation slot.
+    func tryClaimGenerate(_ request: GenerateRequest) -> GenerateClaim {
         writeQueue.sync {
-            let allowed = state.withLock { s in
-                !s.generating && (Date().timeIntervalSince1970 - s.lastGenerateTime) >= Self.generateCooldown
-            }
-            guard allowed else { return false }
-            state.withLock {
-                $0.generating = true
-                $0.version += 1
+            let current = state.withLock { $0 }
+            guard !current.generating else { return .skipped("generating") }
+
+            switch request {
+            case .manual:
+                state.withLock {
+                    $0.generating = true
+                    if let latestKey = latestSectionKey(in: $0.digest) {
+                        $0.autoPrefetchSectionKey = latestKey
+                    }
+                    $0.version += 1
+                }
+            case .prefetch(let requestedSectionKey):
+                guard let latestKey = latestSectionKey(in: current.digest) else {
+                    return .skipped("no_latest_section")
+                }
+                guard requestedSectionKey == latestKey else {
+                    return .skipped("stale_section")
+                }
+                guard current.autoPrefetchSectionKey != latestKey else {
+                    return .skipped("already_claimed")
+                }
+                state.withLock {
+                    $0.generating = true
+                    $0.autoPrefetchSectionKey = latestKey
+                    $0.version += 1
+                }
             }
             broadcastState()
-            return true
+            return .accepted
         }
     }
 
-    func finishGenerating() {
+    func finishGenerating(_ request: GenerateRequest, result: GenerateResult) {
         writeQueue.sync {
             state.withLock {
                 $0.generating = false
-                $0.lastGenerateTime = Date().timeIntervalSince1970
+                // Only successful auto-prefetches should consume a section.
+                // If the run produced no picks or failed, allow the same
+                // visible section to retry later in the reading session.
+                if case .prefetch(let sectionKey) = request,
+                   (result.picks == 0 || result.error != nil),
+                   $0.autoPrefetchSectionKey == sectionKey {
+                    $0.autoPrefetchSectionKey = ""
+                }
                 $0.version += 1
             }
             broadcastState()
@@ -213,8 +250,8 @@ public final class DigestState: @unchecked Sendable {
     func stateJson() -> String {
         let snapshot = state.withLock { $0 }
         let postCount = snapshot.digest.sections.reduce(0) { $0 + $1.posts.count }
-        let canGen = !snapshot.generating && (Date().timeIntervalSince1970 - snapshot.lastGenerateTime) >= Self.generateCooldown
-        return "{\"instanceId\":\"\(instanceId)\",\"version\":\(snapshot.version),\"mtime\":\(snapshot.mtime),\"postCount\":\(postCount),\"lastSeenPostId\":\"\(snapshot.lastSeenPostId)\",\"lastSeenFraction\":\(snapshot.lastSeenFraction),\"canGenerate\":\(canGen)}"
+        let canGen = !snapshot.generating
+        return "{\"instanceId\":\"\(instanceId)\",\"version\":\(snapshot.version),\"mtime\":\(snapshot.mtime),\"postCount\":\(postCount),\"lastSeenPostId\":\"\(snapshot.lastSeenPostId)\",\"lastSeenFraction\":\(snapshot.lastSeenFraction),\"canGenerate\":\(canGen),\"autoPrefetchSectionKey\":\"\(escapeJSON(snapshot.autoPrefetchSectionKey))\"}"
     }
 
     func update(_ digest: Digest) {
@@ -334,14 +371,36 @@ public func currentDigest(_ handle: ServerHandle) -> Digest {
 
 private func handleConnection(_ connection: NWConnection, state: DigestState) {
     connection.start(queue: .global(qos: .userInitiated))
+    receiveFullRequest(connection, state: state, accumulated: Data())
+}
 
-    connection.receive(minimumIncompleteLength: 1, maximumLength: 8192) { data, _, _, error in
-        guard let data = data, error == nil else {
+private func receiveFullRequest(_ connection: NWConnection, state: DigestState, accumulated: Data) {
+    connection.receive(minimumIncompleteLength: 1, maximumLength: 8192) { data, _, isComplete, error in
+        guard error == nil else {
             connection.cancel()
             return
         }
 
-        let request = String(data: data, encoding: .utf8) ?? ""
+        var requestData = accumulated
+        if let data {
+            requestData.append(data)
+        }
+
+        guard !requestData.isEmpty else {
+            connection.cancel()
+            return
+        }
+
+        if !isRequestComplete(requestData) {
+            guard !isComplete else {
+                connection.cancel()
+                return
+            }
+            receiveFullRequest(connection, state: state, accumulated: requestData)
+            return
+        }
+
+        let request = String(data: requestData, encoding: .utf8) ?? ""
         let path = parseRequestPath(request)
 
         // SSE: keep the connection open and stream events
@@ -355,6 +414,16 @@ private func handleConnection(_ connection: NWConnection, state: DigestState) {
             connection.cancel()
         })
     }
+}
+
+private func isRequestComplete(_ requestData: Data) -> Bool {
+    let separator = Data("\r\n\r\n".utf8)
+    guard let headerRange = requestData.range(of: separator) else { return false }
+    let headerData = requestData.subdata(in: requestData.startIndex..<headerRange.lowerBound)
+    let headerText = String(data: headerData, encoding: .utf8) ?? ""
+    let bodyStart = headerRange.upperBound
+    let expectedBodyLength = parseContentLength(headerText) ?? 0
+    return requestData.count >= bodyStart + expectedBodyLength
 }
 
 /// Sends SSE response headers and registers the connection for broadcasts.
@@ -419,7 +488,7 @@ func routeRequest(_ rawRequest: String, state: DigestState) -> Data {
     case (_, "/api/mtime"):
         response = handleApiMtime(state: state)
     case (_, "/api/generate"):
-        response = handleApiGenerate(state: state)
+        response = handleApiGenerate(rawRequest: rawRequest, state: state)
     case ("GET", "/api/position"):
         response = handleGetPosition(state: state)
     case ("POST", "/api/position"):
@@ -453,6 +522,16 @@ func parseRequestPath(_ rawRequest: String) -> String {
     return String(parts[1])
 }
 
+private func parseContentLength(_ headers: String) -> Int? {
+    for line in headers.split(separator: "\r\n") {
+        let lowercased = line.lowercased()
+        guard lowercased.hasPrefix("content-length:") else { continue }
+        let value = lowercased.dropFirst("content-length:".count).trimmingCharacters(in: .whitespaces)
+        return Int(value)
+    }
+    return nil
+}
+
 // MARK: - Route Handlers
 
 private func handleRoot(state: DigestState) -> String {
@@ -475,12 +554,7 @@ private func handleApiDigest(state: DigestState) -> String {
 }
 
 private func handleApiMtime(state: DigestState) -> String {
-    let snap = state.snapshot()
-    let postCount = snap.digest.sections.reduce(0) { $0 + $1.posts.count }
-    let json = """
-    {"instanceId":"\(state.instanceId)","version":\(snap.version),"mtime":\(snap.mtime),"postCount":\(postCount),"lastSeenPostId":"\(escapeJSON(snap.lastSeenPostId))","lastSeenFraction":\(snap.lastSeenFraction)}
-    """
-    return httpResponse(status: 200, contentType: "application/json", body: json)
+    return httpResponse(status: 200, contentType: "application/json", body: state.stateJson())
 }
 
 private func handleGetPosition(state: DigestState) -> String {
@@ -503,23 +577,58 @@ private func handlePostPosition(rawRequest: String, state: DigestState) -> Strin
     return httpResponse(status: 200, contentType: "application/json", body: "{\"ok\":true}")
 }
 
-private func handleApiGenerate(state: DigestState) -> String {
+private func handleApiGenerate(rawRequest: String, state: DigestState) -> String {
     guard let onGenerate = state.onGenerate else {
         return httpResponse(status: 501, contentType: "application/json",
                           body: "{\"error\":\"generate not configured\"}")
     }
-    guard state.tryClaimGenerate() else {
+
+    let request: DigestState.GenerateRequest
+    switch parseGenerateRequest(rawRequest) {
+    case .success(let parsed):
+        request = parsed
+    case .failure(let error):
+        return httpResponse(status: 400, contentType: "application/json",
+                          body: "{\"error\":\"\(escapeJSON(error))\"}")
+    }
+
+    switch state.tryClaimGenerate(request) {
+    case .accepted:
+        break
+    case .skipped(let reason):
         return httpResponse(status: 200, contentType: "application/json",
-                          body: "{\"picks\":0,\"skipped\":\"cooldown\"}")
+                          body: "{\"picks\":0,\"skipped\":\"\(escapeJSON(reason))\"}")
     }
     let result = onGenerate()
-    state.finishGenerating()
+    state.finishGenerating(request, result: result)
     if let error = result.error {
         return httpResponse(status: 500, contentType: "application/json",
                           body: "{\"error\":\"\(escapeJSON(error))\"}")
     }
     return httpResponse(status: 200, contentType: "application/json",
                        body: "{\"picks\":\(result.picks)}")
+}
+
+private enum GenerateRequestParseResult {
+    case success(DigestState.GenerateRequest)
+    case failure(String)
+}
+
+private func parseGenerateRequest(_ rawRequest: String) -> GenerateRequestParseResult {
+    let body = parseRequestBody(rawRequest).trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !body.isEmpty else { return .success(.manual) }
+    guard let data = body.data(using: .utf8),
+          let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+          let mode = obj["mode"] as? String else {
+        return .failure("invalid generate request body")
+    }
+    guard mode == "prefetch" else {
+        return .failure("unsupported generate mode")
+    }
+    guard let sectionKey = obj["sectionKey"] as? String, !sectionKey.isEmpty else {
+        return .failure("missing sectionKey")
+    }
+    return .success(.prefetch(sectionKey: sectionKey))
 }
 
 private func escapeJSON(_ text: String) -> String {
