@@ -38,12 +38,22 @@ html, body {
   width: 100%;
 }
 .page-wrapper {
-  overflow-x: hidden;
+  overflow-x: clip;
+  overflow-y: visible;
   width: 100%;
   max-width: 100%;
   position: relative;
 }
-#app { max-width: 914px; width: 100%; box-sizing: border-box; margin: 0 auto; padding: 16px; overflow: hidden; word-break: break-word; }
+#app {
+  max-width: 914px;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding: 16px;
+  overflow-x: clip;
+  overflow-y: visible;
+  word-break: break-word;
+}
 #app * { max-width: 100%; box-sizing: border-box; }
 @media (max-width: 430px) { #app { padding: 8px; } }
 @media (min-width: 1400px) { #app { max-width: 1024px; } }

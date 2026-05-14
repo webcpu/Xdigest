@@ -187,6 +187,15 @@ func readerPageEmpty() {
     #expect(page.contains("timeline"))
 }
 
+@Test("Reader page leaves vertical scrolling to the document")
+func readerPageDoesNotCreateNestedVerticalScrollContainers() {
+    let page = readerPage(digestHTML: "<p>test content</p>")
+
+    #expect(page.contains("overflow-x: clip;"))
+    #expect(page.contains("overflow-y: visible;"))
+    #expect(!page.contains("overflow: hidden; word-break: break-word;"))
+}
+
 // MARK: - Helpers
 
 private func makeScored(
