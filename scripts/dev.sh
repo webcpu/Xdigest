@@ -13,6 +13,7 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 CONFIG="debug"
 RUN_TESTS=0
 PORT=8408
+VERIFY_ATTEMPTS=150
 
 for arg in "$@"; do
     case "$arg" in
@@ -74,13 +75,41 @@ for i in 1 2 3 4 5; do
 done
 
 echo "==> Starting new process"
-"$BINARY" 2>/tmp/xdigest-err.txt &
-APP_PID=$!
+STDOUT_LOG="/tmp/xdigest-out.txt"
+STDERR_LOG="/tmp/xdigest-err.txt"
+: > "$STDOUT_LOG"
+: > "$STDERR_LOG"
+APP_PID=$(python3 - "$BINARY" "$STDOUT_LOG" "$STDERR_LOG" <<'PY'
+import subprocess
+import sys
 
-# Wait for server to come up (up to 5 seconds)
-for i in $(seq 1 25); do
+binary, stdout_path, stderr_path = sys.argv[1:]
+with open(stdout_path, "wb") as stdout, open(stderr_path, "wb") as stderr:
+    process = subprocess.Popen(
+        [binary],
+        stdin=subprocess.DEVNULL,
+        stdout=stdout,
+        stderr=stderr,
+        start_new_session=True,
+    )
+print(process.pid)
+PY
+)
+
+# Wait for server to come up (up to 30 seconds). App launch runs setup
+# probes before binding the server, and those probes may call external
+# CLIs such as bird and Claude.
+for i in $(seq 1 "$VERIFY_ATTEMPTS"); do
     if curl -sf -o /dev/null "http://localhost:$PORT/api/mtime"; then
         break
+    fi
+    if ! kill -0 "$APP_PID" 2>/dev/null; then
+        echo "FAIL: app exited before server responded on port $PORT"
+        echo "--- stderr log ---"
+        tail -120 "$STDERR_LOG"
+        echo "--- stdout log ---"
+        tail -120 "$STDOUT_LOG"
+        exit 1
     fi
     sleep 0.2
 done
@@ -88,9 +117,14 @@ done
 echo "==> Verifying"
 RESPONSE=$(curl -s "http://localhost:$PORT/api/mtime" || true)
 if [ -z "$RESPONSE" ]; then
-    echo "FAIL: server did not respond on port $PORT"
+    echo "FAIL: server did not respond on port $PORT after 30s"
+    if kill -0 "$APP_PID" 2>/dev/null; then
+        echo "App process is still running (pid=$APP_PID). Check for a setup window or a slow startup probe."
+    fi
     echo "--- stderr log ---"
-    cat /tmp/xdigest-err.txt
+    tail -120 "$STDERR_LOG"
+    echo "--- stdout log ---"
+    tail -120 "$STDOUT_LOG"
     exit 1
 fi
 
