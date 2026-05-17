@@ -196,6 +196,17 @@ func readerPageDoesNotCreateNestedVerticalScrollContainers() {
     #expect(!page.contains("overflow: hidden; word-break: break-word;"))
 }
 
+@Test("Reader page shrinks inline 14px and 15px text to 13px on small viewports")
+func readerPageShrinksTweetTextOnMobile() {
+    let page = readerPage(digestHTML: "")
+
+    #expect(page.contains("@media (max-width: 600px)"))
+    // Both inline pixel sizes used by the tweet card (15px body+name,
+    // 14px handle+timestamp+quoted-body) collapse to 13px on iPhone.
+    #expect(page.contains("[style*=\"font-size:15px\"] { font-size: 13px !important; }"))
+    #expect(page.contains("[style*=\"font-size:14px\"] { font-size: 13px !important; }"))
+}
+
 // MARK: - Helpers
 
 private func makeScored(
