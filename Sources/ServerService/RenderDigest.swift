@@ -320,8 +320,8 @@ private func renderQuotedTweet(_ tweet: Tweet) -> String {
 
     return """
     <div style="border:1px solid #2f3336;border-radius:12px;padding:12px;margin-top:8px;">
-    <div><b>\(escapeHTML(name))</b> \
-    <a href="https://x.com/\(escapeHTML(handle))" style="color:#7a8088;text-decoration:none;">\
+    <div><b style="font-size:15px;">\(escapeHTML(name))</b> \
+    <a href="https://x.com/\(escapeHTML(handle))" style="color:#7a8088;font-size:14px;text-decoration:none;">\
     @\(escapeHTML(handle))</a></div>
     <div style="font-size:14px;line-height:1.4;padding:4px 0;">\(text)</div>
     <a href="\(url)" style="color:#7a8088;font-size:12px;text-decoration:none;" target="_blank">&#128279;</a>

@@ -196,6 +196,26 @@ func readerPageDoesNotCreateNestedVerticalScrollContainers() {
     #expect(!page.contains("overflow: hidden; word-break: break-word;"))
 }
 
+@Test("Quoted tweet name and handle use the same inline font-sizes as the main header")
+func renderQuotedTweetHeaderMatchesMainHeaderSizes() {
+    let quoted = Tweet(
+        id: "999",
+        text: "Quoted body",
+        createdAt: "Thu Apr 10 12:00:00 +0000 2026",
+        author: Author(username: "steipete", name: "Peter Steinberger"),
+        authorId: "2"
+    )
+    let post = makeScored(id: "1", text: "Outer", quotedTweet: quoted)
+    let html = renderPost(post)
+
+    // Mobile shrink rule (ReaderTemplate) keys off literal "font-size:15px"
+    // and "font-size:14px" substrings. Without these on the quoted header,
+    // it inherits the 16px body default and looks bigger than the main header
+    // on iPhone.
+    #expect(html.contains("<b style=\"font-size:15px;\">Peter Steinberger</b>"))
+    #expect(html.contains("color:#7a8088;font-size:14px;text-decoration:none;"))
+}
+
 @Test("Reader page shrinks inline 14px and 15px text to 13px on small viewports")
 func readerPageShrinksTweetTextOnMobile() {
     let page = readerPage(digestHTML: "")
@@ -254,7 +274,8 @@ private func makeScored(
     score: Double = 0.8,
     repost: Repost? = nil,
     media: [Media]? = nil,
-    tags: [String] = ["test"]
+    tags: [String] = ["test"],
+    quotedTweet: Tweet? = nil
 ) -> ScoredPost {
     let tweet = Tweet(
         id: id,
@@ -264,7 +285,8 @@ private func makeScored(
         authorId: "1",
         media: media,
         avatarUrl: avatarUrl,
-        repost: repost
+        repost: repost,
+        quotedTweet: quotedTweet
     )
     return ScoredPost(tweet: tweet, score: score, reason: "test", tags: tags)
 }
