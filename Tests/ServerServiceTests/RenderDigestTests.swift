@@ -207,6 +207,42 @@ func readerPageShrinksTweetTextOnMobile() {
     #expect(page.contains("[style*=\"font-size:14px\"] { font-size: 13px !important; }"))
 }
 
+@Test("Generate button spinner is driven by server canGenerate state")
+func readerPageGenerateButtonSyncsWithServer() {
+    let page = readerPage(digestHTML: "")
+
+    // A helper toggles the .loading class from the server's canGenerate flag.
+    #expect(page.contains("function syncGenerateButton"))
+    // absorbServerState must call it on every SSE update so all clients
+    // (not just the clicker) reflect the server-truth generating state.
+    #expect(page.contains("syncGenerateButton(d.canGenerate)"))
+}
+
+@Test("Generate button does not remove .loading on its own success response")
+func readerPageGenerateButtonDoesNotSelfClearOnSuccess() {
+    let page = readerPage(digestHTML: "")
+
+    // The success branch of generateMore must leave the spinner running
+    // until the SSE event reports generating=false. Otherwise the clicker
+    // sees the spinner stop while other clients still see it spinning.
+    if let genRange = page.range(of: "function generateMore()") {
+        // Grab just the generateMore body — the next "function " definition
+        // is the boundary.
+        let afterFn = page[genRange.upperBound...]
+        let bodyEnd = afterFn.range(of: "\nfunction ")?.lowerBound ?? afterFn.endIndex
+        let body = afterFn[..<bodyEnd]
+        let then = body.range(of: ".then(function(r)")
+        let catchClause = body.range(of: ".catch(function(e)")
+        if let then, let catchClause {
+            let successBlock = body[then.lowerBound..<catchClause.lowerBound]
+            #expect(!successBlock.contains("classList.remove('loading')"))
+        }
+        // Error branch should still clear so a network failure doesn't
+        // leave the spinner stuck if SSE also dropped.
+        #expect(body.contains("btn.classList.remove('loading')"))
+    }
+}
+
 // MARK: - Helpers
 
 private func makeScored(

@@ -225,22 +225,35 @@ function doSearch() {
   if (matched > 0) window.scrollTo(0, 0);
 }
 
+// Sync the FAB spinner with the server's authoritative generating state.
+// All clients (not just the clicker) call this on every SSE update, so a
+// generation started on one device animates every connected device until
+// the server reports it finished.
+function syncGenerateButton(canGenerate) {
+  var btn = document.getElementById('fab-gen');
+  if (!btn) return;
+  btn.classList.toggle('loading', !canGenerate);
+  btn.title = canGenerate ? 'Generate more' : 'Generating...';
+}
+
 function generateMore() {
   var btn = document.getElementById('fab-gen');
+  // Optimistic local spinner — server SSE will confirm or correct.
   btn.classList.add('loading');
   btn.title = 'Generating...';
-  // Kick off server-side generation. The banner is NOT managed here --
-  // the server's SSE broadcast triggers fetchPendingDigest which owns
-  // the banner. This endpoint response only tells us the spinner can
-  // stop; the banner appears via the SSE path.
+  // Kick off server-side generation. The spinner's off-toggle is owned by
+  // the SSE state event (canGenerate=true), not by this response, so all
+  // clients stop spinning together.
   fetch('/api/generate', {method: 'POST'}).then(function(r) { return r.json(); }).then(function(d) {
-    btn.classList.remove('loading');
-    btn.title = 'Generate more';
     if (d.picks === 0) {
       btn.title = 'No new picks';
-      setTimeout(function() { btn.title = 'Generate more'; }, 3000);
+      setTimeout(function() {
+        if (!btn.classList.contains('loading')) btn.title = 'Generate more';
+      }, 3000);
     }
   }).catch(function(e) {
+    // Network failure may also mean SSE dropped — clear the local spinner
+    // so the user isn't stuck staring at a dead animation.
     btn.classList.remove('loading');
     btn.title = 'Error: ' + e.message;
   });
@@ -823,7 +836,10 @@ function absorbServerState(d) {
   localVersion = (typeof d.version === 'number') ? d.version : localVersion;
   serverPosition = d.lastSeenPostId || '';
   serverFraction = (typeof d.lastSeenFraction === 'number') ? d.lastSeenFraction : 0;
-  if (typeof d.canGenerate === 'boolean') prefetchState = withServerPermission(prefetchState, d.canGenerate);
+  if (typeof d.canGenerate === 'boolean') {
+    prefetchState = withServerPermission(prefetchState, d.canGenerate);
+    syncGenerateButton(d.canGenerate);
+  }
   if (typeof d.autoPrefetchSectionKey === 'string') prefetchState = withClaimedSectionKey(prefetchState, d.autoPrefetchSectionKey);
 }
 
