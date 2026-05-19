@@ -63,10 +63,10 @@ func buildStatusMenu(
 
     menu.addItem(.separator())
 
-    // Font Size submenu — one 5-level slider per device class. Mac/iPad and
+    // Text Size submenu — one 5-level slider per device class. Mac/iPad and
     // iPhone are tuned independently. Sliders are continuous so the reader
     // updates live on every tick over SSE.
-    let fontSizeItem = NSMenuItem(title: "Font Size", action: nil, keyEquivalent: "")
+    let fontSizeItem = NSMenuItem(title: "Text Size", action: nil, keyEquivalent: "")
     let fontSizeSubmenu = NSMenu()
     fontSizeSubmenu.addItem(sizeSliderItem(
         label: "For Mac & iPad",
@@ -101,12 +101,13 @@ func buildStatusMenu(
     return menu
 }
 
-/// Menu item hosting a 5-position NSSlider for a device class. The slider's
-/// integer value (0...4) maps to "xs"|"s"|"m"|"l"|"xl" and is read by the
-/// AppDelegate's action handler. Continuous so the reader updates live as
-/// the user drags.
+/// Menu item hosting a 5-position NSSlider for a device class. The slider is
+/// flanked by a small "A" and a large "A" (Apple's text-size affordance from
+/// Display & Brightness). The slider's integer value (0...4) maps to
+/// "xs"|"s"|"m"|"l"|"xl" and is read by the AppDelegate's action handler.
+/// Continuous so the reader updates live as the user drags.
 private func sizeSliderItem(label: String, current: String, action: Selector) -> NSMenuItem {
-    let width: CGFloat = 240
+    let width: CGFloat = 260
     let container = NSView(frame: NSRect(x: 0, y: 0, width: width, height: 56))
 
     let titleLabel = NSTextField(labelWithString: label)
@@ -115,6 +116,24 @@ private func sizeSliderItem(label: String, current: String, action: Selector) ->
     titleLabel.frame = NSRect(x: 18, y: 34, width: width - 36, height: 16)
     container.addSubview(titleLabel)
 
+    // Small "A" on the left -- smaller of the two glyphs anchored at slider min.
+    let smallA = NSTextField(labelWithString: "A")
+    smallA.font = NSFont.systemFont(ofSize: 11, weight: .regular)
+    smallA.textColor = .secondaryLabelColor
+    smallA.alignment = .center
+    smallA.frame = NSRect(x: 14, y: 8, width: 14, height: 16)
+    container.addSubview(smallA)
+
+    // Large "A" on the right -- larger of the two glyphs anchored at slider max.
+    let largeA = NSTextField(labelWithString: "A")
+    largeA.font = NSFont.systemFont(ofSize: 17, weight: .regular)
+    largeA.textColor = .secondaryLabelColor
+    largeA.alignment = .center
+    largeA.frame = NSRect(x: width - 14 - 18, y: 4, width: 18, height: 22)
+    container.addSubview(largeA)
+
+    let sliderLeft: CGFloat = 14 + 14 + 6 // padding + smallA + gap
+    let sliderRight: CGFloat = 14 + 18 + 6 // padding + largeA + gap
     let slider = NSSlider()
     slider.minValue = 0
     slider.maxValue = 4
@@ -125,7 +144,7 @@ private func sizeSliderItem(label: String, current: String, action: Selector) ->
     slider.isContinuous = true
     slider.target = nil // walks responder chain → AppDelegate
     slider.action = action
-    slider.frame = NSRect(x: 18, y: 4, width: width - 36, height: 24)
+    slider.frame = NSRect(x: sliderLeft, y: 4, width: width - sliderLeft - sliderRight, height: 24)
     container.addSubview(slider)
 
     let item = NSMenuItem()
