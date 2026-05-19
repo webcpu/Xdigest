@@ -37,9 +37,11 @@ func makeMenuBarIcon() -> NSImage {
 func buildStatusMenu(
     isGenerating: Bool,
     fontSize: String,
+    fontSizeMobile: String,
     generateAction: Selector,
     openReaderAction: Selector,
     fontSizeAction: Selector,
+    fontSizeMobileAction: Selector,
     qrCodeAction: Selector,
     quitAction: Selector,
     updaterController: SPUStandardUpdaterController
@@ -61,16 +63,19 @@ func buildStatusMenu(
 
     menu.addItem(.separator())
 
-    // Font Size submenu — checkmark on the active size.
-    // representedObject carries the "s"|"m"|"l" key back to the action.
+    // Font Size submenu — nested per device class so Mac/iPad and iPhone
+    // can be tuned independently. Checkmark on the active size in each leaf.
     let fontSizeItem = NSMenuItem(title: "Font Size", action: nil, keyEquivalent: "")
     let fontSizeSubmenu = NSMenu()
-    for (key, label) in [("s", "Small"), ("m", "Medium"), ("l", "Large")] {
-        let item = NSMenuItem(title: label, action: fontSizeAction, keyEquivalent: "")
-        item.representedObject = key
-        item.state = (fontSize == key) ? .on : .off
-        fontSizeSubmenu.addItem(item)
-    }
+
+    let desktopItem = NSMenuItem(title: "For Mac & iPad", action: nil, keyEquivalent: "")
+    desktopItem.submenu = sizePickerSubmenu(current: fontSize, action: fontSizeAction)
+    fontSizeSubmenu.addItem(desktopItem)
+
+    let mobileItem = NSMenuItem(title: "For iPhone", action: nil, keyEquivalent: "")
+    mobileItem.submenu = sizePickerSubmenu(current: fontSizeMobile, action: fontSizeMobileAction)
+    fontSizeSubmenu.addItem(mobileItem)
+
     fontSizeItem.submenu = fontSizeSubmenu
     menu.addItem(fontSizeItem)
 
@@ -91,4 +96,18 @@ func buildStatusMenu(
     menu.addItem(NSMenuItem(title: "Quit", action: quitAction, keyEquivalent: "q"))
 
     return menu
+}
+
+/// Three-item submenu (Small / Medium / Large) with a checkmark on the
+/// currently active value. representedObject carries the "s"|"m"|"l" key
+/// back to the action handler.
+private func sizePickerSubmenu(current: String, action: Selector) -> NSMenu {
+    let submenu = NSMenu()
+    for (key, label) in [("s", "Small"), ("m", "Medium"), ("l", "Large")] {
+        let item = NSMenuItem(title: label, action: action, keyEquivalent: "")
+        item.representedObject = key
+        item.state = (current == key) ? .on : .off
+        submenu.addItem(item)
+    }
+    return submenu
 }

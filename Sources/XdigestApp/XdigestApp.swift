@@ -27,8 +27,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var qrWindow: NSWindow?
     private var generatingCount = 0
     private var isGenerating: Bool { generatingCount > 0 }
-    /// Reader body-text size preference, persisted across launches.
+    /// Reader body-text size preferences, persisted across launches.
+    /// Desktop (Mac and iPad) and iPhone are stored separately because each
+    /// device class has its own optical reading density.
     private var fontSize: String = UserDefaults.standard.string(forKey: "XdigestFontSize") ?? "m"
+    private var fontSizeMobile: String = UserDefaults.standard.string(forKey: "XdigestFontSizeMobile") ?? "m"
     nonisolated private let generationQueue = GenerationQueue()
     private lazy var updaterController = SPUStandardUpdaterController(
         startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil
@@ -106,9 +109,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem?.menu = buildStatusMenu(
             isGenerating: isGenerating,
             fontSize: fontSize,
+            fontSizeMobile: fontSizeMobile,
             generateAction: #selector(generateDigest),
             openReaderAction: #selector(openReader),
             fontSizeAction: #selector(changeFontSize(_:)),
+            fontSizeMobileAction: #selector(changeFontSizeMobile(_:)),
             qrCodeAction: #selector(showQRCode),
             quitAction: #selector(quit),
             updaterController: updaterController
@@ -142,6 +147,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         UserDefaults.standard.set(key, forKey: "XdigestFontSize")
         if let handle = serverHandle {
             ServerService.setFontSize(handle, fontSize: key)
+        }
+        rebuildMenu()
+    }
+
+    @objc private func changeFontSizeMobile(_ sender: NSMenuItem) {
+        guard let key = sender.representedObject as? String, key != fontSizeMobile else { return }
+        fontSizeMobile = key
+        UserDefaults.standard.set(key, forKey: "XdigestFontSizeMobile")
+        if let handle = serverHandle {
+            ServerService.setFontSizeMobile(handle, fontSize: key)
         }
         rebuildMenu()
     }
@@ -187,6 +202,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self.serverHandle = try await ServerService.startServer(
                     port: serverPort, digest: initialDigest, lastSeenPostId: initialPosition,
                     lastFontSize: fontSize,
+                    lastFontSizeMobile: fontSizeMobile,
                     onGenerate: { [weak self] in
                         self?.runPipelineSync() ?? GenerateResult(picks: 0, error: "app not ready")
                     },

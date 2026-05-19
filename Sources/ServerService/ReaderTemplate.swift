@@ -57,12 +57,16 @@ html, body {
 #app * { max-width: 100%; box-sizing: border-box; }
 @media (max-width: 430px) { #app { padding: 8px; } }
 @media (min-width: 1400px) { #app { max-width: 1024px; } }
-/* Body-text size preference (set by macOS status menu, broadcast via SSE).
+/* Body-text size preferences (set by macOS status menu, broadcast via SSE).
  * Only the tweet body and quoted body scale; names, handles, timestamps stay fixed.
- * Desktop reads --xd-body, mobile reads --xd-body-mobile. */
-body[data-initial-font-size="s"] { --xd-body: 15px; --xd-body-mobile: 11px; }
-body[data-initial-font-size="m"] { --xd-body: 17px; --xd-body-mobile: 13px; }
-body[data-initial-font-size="l"] { --xd-body: 19px; --xd-body-mobile: 15px; }
+ * Desktop (Mac, iPad) and mobile (iPhone) are stored separately so each device
+ * class can pick its own letter size. */
+body[data-initial-font-size="s"] { --xd-body: 15px; }
+body[data-initial-font-size="m"] { --xd-body: 17px; }
+body[data-initial-font-size="l"] { --xd-body: 19px; }
+body[data-initial-font-size-mobile="s"] { --xd-body-mobile: 11px; }
+body[data-initial-font-size-mobile="m"] { --xd-body-mobile: 13px; }
+body[data-initial-font-size-mobile="l"] { --xd-body-mobile: 15px; }
 @media (min-width: 601px) {
   /* !important needed because the matching inline style="font-size:17px"
    * outranks an attribute-selector rule on specificity grounds. */
@@ -125,7 +129,7 @@ video { max-width: 100%; border-radius: 16px; margin-top: 12px; }
 img[style*="border-radius"]:not([width="32"]) { cursor: zoom-in; }
 </style>
 </head>
-<body data-initial-position="<!--INITIAL_POSITION-->" data-initial-fraction="<!--INITIAL_FRACTION-->" data-initial-version="<!--INITIAL_VERSION-->" data-instance-id="<!--INSTANCE_ID-->" data-initial-font-size="<!--INITIAL_FONT_SIZE-->">
+<body data-initial-position="<!--INITIAL_POSITION-->" data-initial-fraction="<!--INITIAL_FRACTION-->" data-initial-version="<!--INITIAL_VERSION-->" data-instance-id="<!--INSTANCE_ID-->" data-initial-font-size="<!--INITIAL_FONT_SIZE-->" data-initial-font-size-mobile="<!--INITIAL_FONT_SIZE_MOBILE-->">
 <div class="page-wrapper">
 <div id="app">
 <h1>xdigest</h1>
@@ -859,9 +863,12 @@ function absorbServerState(d) {
     syncGenerateButton(d.canGenerate);
   }
   if (typeof d.autoPrefetchSectionKey === 'string') prefetchState = withClaimedSectionKey(prefetchState, d.autoPrefetchSectionKey);
-  // Body-text size preference: bump the dataset attr; CSS does the rest.
+  // Body-text size preferences: bump the dataset attrs; CSS does the rest.
   if (typeof d.fontSize === 'string' && d.fontSize && document.body.dataset.initialFontSize !== d.fontSize) {
     document.body.dataset.initialFontSize = d.fontSize;
+  }
+  if (typeof d.fontSizeMobile === 'string' && d.fontSizeMobile && document.body.dataset.initialFontSizeMobile !== d.fontSizeMobile) {
+    document.body.dataset.initialFontSizeMobile = d.fontSizeMobile;
   }
 }
 

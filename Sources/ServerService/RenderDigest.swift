@@ -150,7 +150,8 @@ public func readerPage(
     initialFraction: Double = 0,
     initialVersion: Int = 0,
     instanceId: String = "",
-    initialFontSize: String = "m"
+    initialFontSize: String = "m",
+    initialFontSizeMobile: String = "m"
 ) -> String {
     readerTemplate
         .replacingOccurrences(of: "<!--DIGEST_DATA-->", with: digestHTML)
@@ -159,6 +160,7 @@ public func readerPage(
         .replacingOccurrences(of: "<!--INITIAL_VERSION-->", with: "\(initialVersion)")
         .replacingOccurrences(of: "<!--INSTANCE_ID-->", with: escapeHTML(instanceId))
         .replacingOccurrences(of: "<!--INITIAL_FONT_SIZE-->", with: escapeHTML(initialFontSize))
+        .replacingOccurrences(of: "<!--INITIAL_FONT_SIZE_MOBILE-->", with: escapeHTML(initialFontSizeMobile))
 }
 
 // MARK: - Helpers

@@ -52,9 +52,14 @@ public final class DigestState: @unchecked Sendable {
         var version: Int
         var generating: Bool = false
         var autoPrefetchSectionKey: String = ""
-        /// Reader body-text size preference. "s" | "m" | "l". Set from the
-        /// macOS status menu; broadcast so connected readers update live.
+        /// Reader body-text size preference for desktop (Mac and iPad).
+        /// "s" | "m" | "l". Set from the macOS status menu; broadcast so
+        /// connected readers update live.
         var fontSize: String = "m"
+        /// Same preference for iPhone (viewport <= 600px). Stored separately
+        /// because iPhone reading density differs from desktop reading
+        /// density at the same letter size.
+        var fontSizeMobile: String = "m"
     }
 
     private let state: Mutex<State>
@@ -78,6 +83,7 @@ public final class DigestState: @unchecked Sendable {
         lastSeenPostId: String = "",
         lastSeenFraction: Double = 0,
         lastFontSize: String = "m",
+        lastFontSizeMobile: String = "m",
         onGenerate: GenerateHandler? = nil,
         onPositionChange: PositionHandler? = nil,
         onDigestChange: DigestChangeHandler? = nil
@@ -88,7 +94,8 @@ public final class DigestState: @unchecked Sendable {
             lastSeenPostId: lastSeenPostId,
             lastSeenFraction: lastSeenFraction,
             version: 0,
-            fontSize: lastFontSize
+            fontSize: lastFontSize,
+            fontSizeMobile: lastFontSizeMobile
         ))
         self.onGenerate = onGenerate
         self.onPositionChange = onPositionChange
@@ -117,6 +124,10 @@ public final class DigestState: @unchecked Sendable {
 
     var fontSize: String {
         state.withLock { $0.fontSize }
+    }
+
+    var fontSizeMobile: String {
+        state.withLock { $0.fontSizeMobile }
     }
 
     /// Atomic snapshot of the publicly observable state.
@@ -247,6 +258,20 @@ public final class DigestState: @unchecked Sendable {
         }
     }
 
+    func updateFontSizeMobile(_ value: String) {
+        writeQueue.sync {
+            var changed = false
+            state.withLock {
+                guard $0.fontSizeMobile != value else { return }
+                $0.fontSizeMobile = value
+                $0.version += 1
+                changed = true
+            }
+            guard changed else { return }
+            broadcastState()
+        }
+    }
+
     func updatePosition(_ postId: String, fraction: Double) {
         writeQueue.sync {
             var changed = false
@@ -274,7 +299,7 @@ public final class DigestState: @unchecked Sendable {
         let snapshot = state.withLock { $0 }
         let postCount = snapshot.digest.sections.reduce(0) { $0 + $1.posts.count }
         let canGen = !snapshot.generating
-        return "{\"instanceId\":\"\(instanceId)\",\"version\":\(snapshot.version),\"mtime\":\(snapshot.mtime),\"postCount\":\(postCount),\"lastSeenPostId\":\"\(snapshot.lastSeenPostId)\",\"lastSeenFraction\":\(snapshot.lastSeenFraction),\"canGenerate\":\(canGen),\"autoPrefetchSectionKey\":\"\(escapeJSON(snapshot.autoPrefetchSectionKey))\",\"fontSize\":\"\(escapeJSON(snapshot.fontSize))\"}"
+        return "{\"instanceId\":\"\(instanceId)\",\"version\":\(snapshot.version),\"mtime\":\(snapshot.mtime),\"postCount\":\(postCount),\"lastSeenPostId\":\"\(snapshot.lastSeenPostId)\",\"lastSeenFraction\":\(snapshot.lastSeenFraction),\"canGenerate\":\(canGen),\"autoPrefetchSectionKey\":\"\(escapeJSON(snapshot.autoPrefetchSectionKey))\",\"fontSize\":\"\(escapeJSON(snapshot.fontSize))\",\"fontSizeMobile\":\"\(escapeJSON(snapshot.fontSizeMobile))\"}"
     }
 
     func update(_ digest: Digest) {
@@ -299,6 +324,7 @@ public func startServer(
     digest: Digest,
     lastSeenPostId: String = "",
     lastFontSize: String = "m",
+    lastFontSizeMobile: String = "m",
     onGenerate: GenerateHandler? = nil,
     onPositionChange: PositionHandler? = nil,
     onDigestChange: DigestChangeHandler? = nil
@@ -311,6 +337,7 @@ public func startServer(
         digest: digest,
         lastSeenPostId: lastSeenPostId,
         lastFontSize: lastFontSize,
+        lastFontSizeMobile: lastFontSizeMobile,
         onGenerate: onGenerate,
         onPositionChange: onPositionChange,
         onDigestChange: onDigestChange
@@ -387,9 +414,14 @@ public func updateDigest(_ handle: ServerHandle, digest: Digest) {
     handle.state.update(digest)
 }
 
-/// Updates the reader body-text size preference and broadcasts to clients.
+/// Updates the desktop (Mac and iPad) body-text size preference and broadcasts.
 public func setFontSize(_ handle: ServerHandle, fontSize: String) {
     handle.state.updateFontSize(fontSize)
+}
+
+/// Updates the iPhone body-text size preference and broadcasts.
+public func setFontSizeMobile(_ handle: ServerHandle, fontSize: String) {
+    handle.state.updateFontSizeMobile(fontSize)
 }
 
 /// Returns the current digest from the running server (atomic snapshot).
@@ -573,7 +605,8 @@ private func handleRoot(state: DigestState) -> String {
         initialFraction: snap.lastSeenFraction,
         initialVersion: snap.version,
         instanceId: state.instanceId,
-        initialFontSize: state.fontSize
+        initialFontSize: state.fontSize,
+        initialFontSizeMobile: state.fontSizeMobile
     )
     return httpResponse(status: 200, contentType: "text/html; charset=utf-8", body: page)
 }
