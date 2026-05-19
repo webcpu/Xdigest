@@ -29,7 +29,7 @@ let readerTemplate = ##"""
 html, body {
   background: #363B40;
   color: #b8bfc6;
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: -apple-system, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 16px;
   line-height: 1.625rem;
   -webkit-font-smoothing: antialiased;
@@ -58,6 +58,7 @@ html, body {
 @media (max-width: 430px) { #app { padding: 8px; } }
 @media (min-width: 1400px) { #app { max-width: 1024px; } }
 @media (max-width: 600px) {
+  [style*="font-size:17px"] { font-size: 13px !important; }
   [style*="font-size:15px"] { font-size: 13px !important; }
   [style*="font-size:14px"] { font-size: 13px !important; }
 }

@@ -223,13 +223,14 @@ func renderQuotedTweetHeaderMatchesMainHeaderSizes() {
     #expect(html.contains("color:#7a8088;font-size:14px;text-decoration:none;"))
 }
 
-@Test("Reader page shrinks inline 14px and 15px text to 13px on small viewports")
+@Test("Reader page shrinks inline 14px, 15px, and 17px text to 13px on small viewports")
 func readerPageShrinksTweetTextOnMobile() {
     let page = readerPage(digestHTML: "")
 
     #expect(page.contains("@media (max-width: 600px)"))
-    // Both inline pixel sizes used by the tweet card (15px body+name,
-    // 14px handle+timestamp+quoted-body) collapse to 13px on iPhone.
+    // Inline pixel sizes used by the tweet card collapse to 13px on iPhone:
+    // 17px body+quoted body (desktop bump), 15px name, 14px handle/timestamp.
+    #expect(page.contains("[style*=\"font-size:17px\"] { font-size: 13px !important; }"))
     #expect(page.contains("[style*=\"font-size:15px\"] { font-size: 13px !important; }"))
     #expect(page.contains("[style*=\"font-size:14px\"] { font-size: 13px !important; }"))
 }

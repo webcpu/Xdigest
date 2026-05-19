@@ -93,7 +93,7 @@ public func renderPost(_ post: ScoredPost) -> String {
     // Tweet text
     parts.append(
         """
-        <div style="font-size:15px;line-height:1.5;padding:4px 0;">\(textWithLinks)</div>
+        <div style="font-size:17px;line-height:1.5;padding:4px 0;">\(textWithLinks)</div>
         """
     )
 
@@ -324,7 +324,7 @@ private func renderQuotedTweet(_ tweet: Tweet) -> String {
     <div><b style="font-size:15px;">\(escapeHTML(name))</b> \
     <a href="https://x.com/\(escapeHTML(handle))" style="color:#7a8088;font-size:14px;text-decoration:none;">\
     @\(escapeHTML(handle))</a></div>
-    <div style="font-size:14px;line-height:1.4;padding:4px 0;">\(text)</div>
+    <div style="font-size:17px;line-height:1.5;padding:4px 0;">\(text)</div>
     <a href="\(url)" style="color:#7a8088;font-size:12px;text-decoration:none;" target="_blank">&#128279;</a>
     </div>
     """
