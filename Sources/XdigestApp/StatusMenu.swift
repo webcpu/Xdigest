@@ -63,19 +63,22 @@ func buildStatusMenu(
 
     menu.addItem(.separator())
 
-    // Font Size submenu — nested per device class so Mac/iPad and iPhone
-    // can be tuned independently. Checkmark on the active size in each leaf.
+    // Font Size submenu — one 5-level slider per device class. Mac/iPad and
+    // iPhone are tuned independently. Sliders are continuous so the reader
+    // updates live on every tick over SSE.
     let fontSizeItem = NSMenuItem(title: "Font Size", action: nil, keyEquivalent: "")
     let fontSizeSubmenu = NSMenu()
-
-    let desktopItem = NSMenuItem(title: "For Mac & iPad", action: nil, keyEquivalent: "")
-    desktopItem.submenu = sizePickerSubmenu(current: fontSize, action: fontSizeAction)
-    fontSizeSubmenu.addItem(desktopItem)
-
-    let mobileItem = NSMenuItem(title: "For iPhone", action: nil, keyEquivalent: "")
-    mobileItem.submenu = sizePickerSubmenu(current: fontSizeMobile, action: fontSizeMobileAction)
-    fontSizeSubmenu.addItem(mobileItem)
-
+    fontSizeSubmenu.addItem(sizeSliderItem(
+        label: "For Mac & iPad",
+        current: fontSize,
+        action: fontSizeAction
+    ))
+    fontSizeSubmenu.addItem(.separator())
+    fontSizeSubmenu.addItem(sizeSliderItem(
+        label: "For iPhone",
+        current: fontSizeMobile,
+        action: fontSizeMobileAction
+    ))
     fontSizeItem.submenu = fontSizeSubmenu
     menu.addItem(fontSizeItem)
 
@@ -98,16 +101,60 @@ func buildStatusMenu(
     return menu
 }
 
-/// Three-item submenu (Small / Medium / Large) with a checkmark on the
-/// currently active value. representedObject carries the "s"|"m"|"l" key
-/// back to the action handler.
-private func sizePickerSubmenu(current: String, action: Selector) -> NSMenu {
-    let submenu = NSMenu()
-    for (key, label) in [("s", "Small"), ("m", "Medium"), ("l", "Large")] {
-        let item = NSMenuItem(title: label, action: action, keyEquivalent: "")
-        item.representedObject = key
-        item.state = (current == key) ? .on : .off
-        submenu.addItem(item)
+/// Menu item hosting a 5-position NSSlider for a device class. The slider's
+/// integer value (0...4) maps to "xs"|"s"|"m"|"l"|"xl" and is read by the
+/// AppDelegate's action handler. Continuous so the reader updates live as
+/// the user drags.
+private func sizeSliderItem(label: String, current: String, action: Selector) -> NSMenuItem {
+    let width: CGFloat = 240
+    let container = NSView(frame: NSRect(x: 0, y: 0, width: width, height: 56))
+
+    let titleLabel = NSTextField(labelWithString: label)
+    titleLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+    titleLabel.textColor = .secondaryLabelColor
+    titleLabel.frame = NSRect(x: 18, y: 34, width: width - 36, height: 16)
+    container.addSubview(titleLabel)
+
+    let slider = NSSlider()
+    slider.minValue = 0
+    slider.maxValue = 4
+    slider.doubleValue = Double(sizeKeyToSliderIndex(current))
+    slider.numberOfTickMarks = 5
+    slider.allowsTickMarkValuesOnly = true
+    slider.tickMarkPosition = .below
+    slider.isContinuous = true
+    slider.target = nil // walks responder chain → AppDelegate
+    slider.action = action
+    slider.frame = NSRect(x: 18, y: 4, width: width - 36, height: 24)
+    container.addSubview(slider)
+
+    let item = NSMenuItem()
+    item.view = container
+    return item
+}
+
+/// Maps the persisted size key to the slider's integer position. Unknown
+/// values fall back to the middle ("m") so a corrupt UserDefaults value
+/// can't strand the slider at an end.
+func sizeKeyToSliderIndex(_ key: String) -> Int {
+    switch key {
+    case "xs": return 0
+    case "s":  return 1
+    case "m":  return 2
+    case "l":  return 3
+    case "xl": return 4
+    default:   return 2
     }
-    return submenu
+}
+
+/// Inverse of sizeKeyToSliderIndex. Called by AppDelegate's slider action.
+func sliderIndexToSizeKey(_ index: Int) -> String {
+    switch index {
+    case 0: return "xs"
+    case 1: return "s"
+    case 2: return "m"
+    case 3: return "l"
+    case 4: return "xl"
+    default: return "m"
+    }
 }

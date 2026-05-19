@@ -141,24 +141,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.terminate(nil)
     }
 
-    @objc private func changeFontSize(_ sender: NSMenuItem) {
-        guard let key = sender.representedObject as? String, key != fontSize else { return }
+    @objc private func changeFontSize(_ sender: NSSlider) {
+        let key = sliderIndexToSizeKey(Int(sender.doubleValue.rounded()))
+        guard key != fontSize else { return }
         fontSize = key
         UserDefaults.standard.set(key, forKey: "XdigestFontSize")
         if let handle = serverHandle {
             ServerService.setFontSize(handle, fontSize: key)
         }
-        rebuildMenu()
+        // Don't rebuild the menu here -- the slider's knob already reflects
+        // its new position, and rebuilding mid-drag would yank the slider
+        // out from under the user.
     }
 
-    @objc private func changeFontSizeMobile(_ sender: NSMenuItem) {
-        guard let key = sender.representedObject as? String, key != fontSizeMobile else { return }
+    @objc private func changeFontSizeMobile(_ sender: NSSlider) {
+        let key = sliderIndexToSizeKey(Int(sender.doubleValue.rounded()))
+        guard key != fontSizeMobile else { return }
         fontSizeMobile = key
         UserDefaults.standard.set(key, forKey: "XdigestFontSizeMobile")
         if let handle = serverHandle {
             ServerService.setFontSizeMobile(handle, fontSize: key)
         }
-        rebuildMenu()
     }
 
     private func performGeneration(thenOpen: Bool) {

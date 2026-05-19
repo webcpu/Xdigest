@@ -61,12 +61,16 @@ html, body {
  * Only the tweet body and quoted body scale; names, handles, timestamps stay fixed.
  * Desktop (Mac, iPad) and mobile (iPhone) are stored separately so each device
  * class can pick its own letter size. */
-body[data-initial-font-size="s"] { --xd-body: 15px; }
-body[data-initial-font-size="m"] { --xd-body: 17px; }
-body[data-initial-font-size="l"] { --xd-body: 19px; }
-body[data-initial-font-size-mobile="s"] { --xd-body-mobile: 11px; }
-body[data-initial-font-size-mobile="m"] { --xd-body-mobile: 13px; }
-body[data-initial-font-size-mobile="l"] { --xd-body-mobile: 15px; }
+body[data-initial-font-size="xs"] { --xd-body: 13px; }
+body[data-initial-font-size="s"]  { --xd-body: 15px; }
+body[data-initial-font-size="m"]  { --xd-body: 17px; }
+body[data-initial-font-size="l"]  { --xd-body: 19px; }
+body[data-initial-font-size="xl"] { --xd-body: 21px; }
+body[data-initial-font-size-mobile="xs"] { --xd-body-mobile: 9px; }
+body[data-initial-font-size-mobile="s"]  { --xd-body-mobile: 11px; }
+body[data-initial-font-size-mobile="m"]  { --xd-body-mobile: 13px; }
+body[data-initial-font-size-mobile="l"]  { --xd-body-mobile: 15px; }
+body[data-initial-font-size-mobile="xl"] { --xd-body-mobile: 17px; }
 @media (min-width: 601px) {
   /* !important needed because the matching inline style="font-size:17px"
    * outranks an attribute-selector rule on specificity grounds. */
