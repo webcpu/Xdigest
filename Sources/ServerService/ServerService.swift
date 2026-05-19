@@ -52,6 +52,9 @@ public final class DigestState: @unchecked Sendable {
         var version: Int
         var generating: Bool = false
         var autoPrefetchSectionKey: String = ""
+        /// Reader body-text size preference. "s" | "m" | "l". Set from the
+        /// macOS status menu; broadcast so connected readers update live.
+        var fontSize: String = "m"
     }
 
     private let state: Mutex<State>
@@ -74,6 +77,7 @@ public final class DigestState: @unchecked Sendable {
         digest: Digest,
         lastSeenPostId: String = "",
         lastSeenFraction: Double = 0,
+        lastFontSize: String = "m",
         onGenerate: GenerateHandler? = nil,
         onPositionChange: PositionHandler? = nil,
         onDigestChange: DigestChangeHandler? = nil
@@ -83,7 +87,8 @@ public final class DigestState: @unchecked Sendable {
             mtime: Date().timeIntervalSince1970,
             lastSeenPostId: lastSeenPostId,
             lastSeenFraction: lastSeenFraction,
-            version: 0
+            version: 0,
+            fontSize: lastFontSize
         ))
         self.onGenerate = onGenerate
         self.onPositionChange = onPositionChange
@@ -108,6 +113,10 @@ public final class DigestState: @unchecked Sendable {
 
     var version: Int {
         state.withLock { $0.version }
+    }
+
+    var fontSize: String {
+        state.withLock { $0.fontSize }
     }
 
     /// Atomic snapshot of the publicly observable state.
@@ -224,6 +233,20 @@ public final class DigestState: @unchecked Sendable {
         }
     }
 
+    func updateFontSize(_ value: String) {
+        writeQueue.sync {
+            var changed = false
+            state.withLock {
+                guard $0.fontSize != value else { return }
+                $0.fontSize = value
+                $0.version += 1
+                changed = true
+            }
+            guard changed else { return }
+            broadcastState()
+        }
+    }
+
     func updatePosition(_ postId: String, fraction: Double) {
         writeQueue.sync {
             var changed = false
@@ -251,7 +274,7 @@ public final class DigestState: @unchecked Sendable {
         let snapshot = state.withLock { $0 }
         let postCount = snapshot.digest.sections.reduce(0) { $0 + $1.posts.count }
         let canGen = !snapshot.generating
-        return "{\"instanceId\":\"\(instanceId)\",\"version\":\(snapshot.version),\"mtime\":\(snapshot.mtime),\"postCount\":\(postCount),\"lastSeenPostId\":\"\(snapshot.lastSeenPostId)\",\"lastSeenFraction\":\(snapshot.lastSeenFraction),\"canGenerate\":\(canGen),\"autoPrefetchSectionKey\":\"\(escapeJSON(snapshot.autoPrefetchSectionKey))\"}"
+        return "{\"instanceId\":\"\(instanceId)\",\"version\":\(snapshot.version),\"mtime\":\(snapshot.mtime),\"postCount\":\(postCount),\"lastSeenPostId\":\"\(snapshot.lastSeenPostId)\",\"lastSeenFraction\":\(snapshot.lastSeenFraction),\"canGenerate\":\(canGen),\"autoPrefetchSectionKey\":\"\(escapeJSON(snapshot.autoPrefetchSectionKey))\",\"fontSize\":\"\(escapeJSON(snapshot.fontSize))\"}"
     }
 
     func update(_ digest: Digest) {
@@ -275,6 +298,7 @@ public func startServer(
     port: Int,
     digest: Digest,
     lastSeenPostId: String = "",
+    lastFontSize: String = "m",
     onGenerate: GenerateHandler? = nil,
     onPositionChange: PositionHandler? = nil,
     onDigestChange: DigestChangeHandler? = nil
@@ -286,6 +310,7 @@ public func startServer(
     let state = DigestState(
         digest: digest,
         lastSeenPostId: lastSeenPostId,
+        lastFontSize: lastFontSize,
         onGenerate: onGenerate,
         onPositionChange: onPositionChange,
         onDigestChange: onDigestChange
@@ -360,6 +385,11 @@ public func stopServer(_ handle: ServerHandle) {
 /// Updates the digest served by the running server.
 public func updateDigest(_ handle: ServerHandle, digest: Digest) {
     handle.state.update(digest)
+}
+
+/// Updates the reader body-text size preference and broadcasts to clients.
+public func setFontSize(_ handle: ServerHandle, fontSize: String) {
+    handle.state.updateFontSize(fontSize)
 }
 
 /// Returns the current digest from the running server (atomic snapshot).
