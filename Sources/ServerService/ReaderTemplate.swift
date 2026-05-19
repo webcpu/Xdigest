@@ -66,11 +66,11 @@ body[data-initial-font-size="s"]  { --xd-body: 16px; }
 body[data-initial-font-size="m"]  { --xd-body: 17px; }
 body[data-initial-font-size="l"]  { --xd-body: 18px; }
 body[data-initial-font-size="xl"] { --xd-body: 19px; }
-body[data-initial-font-size-mobile="xs"] { --xd-body-mobile: 11px; }
-body[data-initial-font-size-mobile="s"]  { --xd-body-mobile: 12px; }
-body[data-initial-font-size-mobile="m"]  { --xd-body-mobile: 13px; }
-body[data-initial-font-size-mobile="l"]  { --xd-body-mobile: 14px; }
-body[data-initial-font-size-mobile="xl"] { --xd-body-mobile: 15px; }
+body[data-initial-font-size-mobile="xs"] { --xd-body-mobile: 12px; }
+body[data-initial-font-size-mobile="s"]  { --xd-body-mobile: 13px; }
+body[data-initial-font-size-mobile="m"]  { --xd-body-mobile: 14px; }
+body[data-initial-font-size-mobile="l"]  { --xd-body-mobile: 15px; }
+body[data-initial-font-size-mobile="xl"] { --xd-body-mobile: 16px; }
 @media (min-width: 601px) {
   /* !important needed because the matching inline style="font-size:17px"
    * outranks an attribute-selector rule on specificity grounds. */
