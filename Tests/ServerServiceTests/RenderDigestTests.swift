@@ -65,6 +65,11 @@ func renderPostWithPhoto() {
 
     #expect(html.contains("photo1.jpg"))
     #expect(html.contains("<img"))
+    // Aspect-ratio reservation: dimensions must be in the rendered tag so
+    // the browser reserves space and lazy loading doesn't shift layout
+    // out from under the scroll-restore anchor.
+    #expect(html.contains("width=\"800\""))
+    #expect(html.contains("height=\"600\""))
 }
 
 @Test("Renders post with video media using poster and data-src")
@@ -83,6 +88,8 @@ func renderPostWithVideo() {
     #expect(html.contains("<video"))
     #expect(html.contains("poster="))
     #expect(html.contains("data-src="))
+    #expect(html.contains("width=\"1280\""))
+    #expect(html.contains("height=\"720\""))
 }
 
 @Test("Renders post with tags as data attribute")

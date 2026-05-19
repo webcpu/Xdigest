@@ -294,8 +294,8 @@ private func renderMedia(_ items: [Media]) -> String {
         switch item.type {
         case .photo:
             return """
-            <img src="\(escapeHTML(item.url))" \
-            style="border-radius:16px;margin-top:12px;max-width:100%;" loading="lazy">
+            <img src="\(escapeHTML(item.url))" width="\(item.width)" height="\(item.height)" \
+            style="border-radius:16px;margin-top:12px;max-width:100%;height:auto;" loading="lazy">
             """
         case .video, .animatedGif:
             let poster = escapeHTML(item.previewUrl ?? item.url)
@@ -303,6 +303,7 @@ private func renderMedia(_ items: [Media]) -> String {
             let proxiedSrc = proxyUrl(videoSrc)
             return """
             <video poster="\(poster)" data-src="\(escapeHTML(proxiedSrc))" \
+            width="\(item.width)" height="\(item.height)" \
             preload="none" style="border-radius:16px;margin-top:12px;max-width:100%;max-height:560px;width:auto;height:auto;" \
             controls playsinline></video>
             """

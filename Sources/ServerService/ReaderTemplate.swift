@@ -75,7 +75,7 @@ a:hover { color: #fff; }
 img { max-width: 100%; border-radius: 16px; margin-top: 12px; }
 video { max-width: 100%; border-radius: 16px; margin-top: 12px; }
 .video-thumb { position: relative; cursor: pointer; margin-top: 12px; display: inline-block; max-width: 100%; }
-.video-thumb img { max-width: 100%; max-height: 600px; border-radius: 16px; display: block; }
+.video-thumb img { max-width: 100%; max-height: 600px; width: auto; height: auto; border-radius: 16px; display: block; }
 .video-thumb .play-btn { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 60px; height: 60px; background: rgba(0,0,0,0.6); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
 .video-thumb .play-btn::after { content: ''; display: block; width: 0; height: 0; border-style: solid; border-width: 12px 0 12px 22px; border-color: transparent transparent transparent #fff; margin-left: 4px; }
 .video-thumb:hover .play-btn { background: rgba(29,155,240,0.8); }
@@ -316,9 +316,12 @@ try { document.querySelectorAll('video').forEach(function(vid) {
   var src = vid.getAttribute('data-src') || vid.getAttribute('src') || '';
   var poster = vid.getAttribute('poster') || '';
   if (poster && src) {
+    var vidW = vid.getAttribute('width') || '';
+    var vidH = vid.getAttribute('height') || '';
+    var dimsAttr = (vidW && vidH) ? ' width="' + vidW + '" height="' + vidH + '"' : '';
     var thumb = document.createElement('div');
     thumb.className = 'video-thumb';
-    thumb.innerHTML = '<img src="' + poster + '"><div class="play-btn"></div>';
+    thumb.innerHTML = '<img src="' + poster + '"' + dimsAttr + '><div class="play-btn"></div>';
     thumb.onclick = function() {
       var w = thumb.querySelector('img').offsetWidth;
       var v = document.createElement('video');
@@ -625,9 +628,12 @@ function enhanceTimeline() {
       var poster = vid.getAttribute('poster') || '';
       if (poster && src && !vid.dataset.enhanced) {
         vid.dataset.enhanced = '1';
+        var vidW = vid.getAttribute('width') || '';
+        var vidH = vid.getAttribute('height') || '';
+        var dimsAttr = (vidW && vidH) ? ' width="' + vidW + '" height="' + vidH + '"' : '';
         var thumb = document.createElement('div');
         thumb.className = 'video-thumb';
-        thumb.innerHTML = '<img src="' + poster + '"><div class="play-btn"></div>';
+        thumb.innerHTML = '<img src="' + poster + '"' + dimsAttr + '><div class="play-btn"></div>';
         thumb.onclick = function() {
           var w = thumb.querySelector('img').offsetWidth;
           var v = document.createElement('video');
