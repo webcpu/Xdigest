@@ -27,6 +27,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var qrWindow: NSWindow?
     private var generatingCount = 0
     private var isGenerating: Bool { generatingCount > 0 }
+    /// Reader body-text size preference, persisted across launches.
+    private var fontSize: String = UserDefaults.standard.string(forKey: "XdigestFontSize") ?? "m"
     nonisolated private let generationQueue = GenerationQueue()
     private lazy var updaterController = SPUStandardUpdaterController(
         startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil
@@ -103,8 +105,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func rebuildMenu() {
         statusItem?.menu = buildStatusMenu(
             isGenerating: isGenerating,
+            fontSize: fontSize,
             generateAction: #selector(generateDigest),
             openReaderAction: #selector(openReader),
+            fontSizeAction: #selector(changeFontSize(_:)),
             qrCodeAction: #selector(showQRCode),
             quitAction: #selector(quit),
             updaterController: updaterController
@@ -130,6 +134,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func quit() {
         if let handle = serverHandle { stopServer(handle) }
         NSApp.terminate(nil)
+    }
+
+    @objc private func changeFontSize(_ sender: NSMenuItem) {
+        guard let key = sender.representedObject as? String, key != fontSize else { return }
+        fontSize = key
+        UserDefaults.standard.set(key, forKey: "XdigestFontSize")
+        if let handle = serverHandle {
+            ServerService.setFontSize(handle, fontSize: key)
+        }
+        rebuildMenu()
     }
 
     private func performGeneration(thenOpen: Bool) {
@@ -172,6 +186,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             do {
                 self.serverHandle = try await ServerService.startServer(
                     port: serverPort, digest: initialDigest, lastSeenPostId: initialPosition,
+                    lastFontSize: fontSize,
                     onGenerate: { [weak self] in
                         self?.runPipelineSync() ?? GenerateResult(picks: 0, error: "app not ready")
                     },

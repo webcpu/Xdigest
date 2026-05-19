@@ -36,8 +36,10 @@ func makeMenuBarIcon() -> NSImage {
 /// than walking the responder chain.
 func buildStatusMenu(
     isGenerating: Bool,
+    fontSize: String,
     generateAction: Selector,
     openReaderAction: Selector,
+    fontSizeAction: Selector,
     qrCodeAction: Selector,
     quitAction: Selector,
     updaterController: SPUStandardUpdaterController
@@ -56,6 +58,21 @@ func buildStatusMenu(
         action: openReaderAction,
         keyEquivalent: "o"
     ))
+
+    menu.addItem(.separator())
+
+    // Font Size submenu — checkmark on the active size.
+    // representedObject carries the "s"|"m"|"l" key back to the action.
+    let fontSizeItem = NSMenuItem(title: "Font Size", action: nil, keyEquivalent: "")
+    let fontSizeSubmenu = NSMenu()
+    for (key, label) in [("s", "Small"), ("m", "Medium"), ("l", "Large")] {
+        let item = NSMenuItem(title: label, action: fontSizeAction, keyEquivalent: "")
+        item.representedObject = key
+        item.state = (fontSize == key) ? .on : .off
+        fontSizeSubmenu.addItem(item)
+    }
+    fontSizeItem.submenu = fontSizeSubmenu
+    menu.addItem(fontSizeItem)
 
     menu.addItem(.separator())
 
