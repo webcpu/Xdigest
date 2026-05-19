@@ -228,9 +228,10 @@ func readerPageShrinksTweetTextOnMobile() {
     let page = readerPage(digestHTML: "")
 
     #expect(page.contains("@media (max-width: 600px)"))
-    // Inline pixel sizes used by the tweet card collapse to 13px on iPhone:
-    // 17px body+quoted body (desktop bump), 15px name, 14px handle/timestamp.
-    #expect(page.contains("[style*=\"font-size:17px\"] { font-size: 13px !important; }"))
+    // 17px body and quoted body collapse to a CSS variable so the
+    // user-picked font size setting applies on mobile too (defaults to 13px).
+    #expect(page.contains("[style*=\"font-size:17px\"] { font-size: var(--xd-body-mobile, 13px) !important; }"))
+    // 15px name and 14px handle/timestamp stay fixed at 13px on mobile.
     #expect(page.contains("[style*=\"font-size:15px\"] { font-size: 13px !important; }"))
     #expect(page.contains("[style*=\"font-size:14px\"] { font-size: 13px !important; }"))
 }

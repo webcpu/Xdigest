@@ -57,8 +57,17 @@ html, body {
 #app * { max-width: 100%; box-sizing: border-box; }
 @media (max-width: 430px) { #app { padding: 8px; } }
 @media (min-width: 1400px) { #app { max-width: 1024px; } }
+/* Body-text size preference (set by macOS status menu, broadcast via SSE).
+ * Only the tweet body and quoted body scale; names, handles, timestamps stay fixed.
+ * Desktop reads --xd-body, mobile reads --xd-body-mobile. */
+body[data-initial-font-size="s"] { --xd-body: 15px; --xd-body-mobile: 11px; }
+body[data-initial-font-size="m"] { --xd-body: 17px; --xd-body-mobile: 13px; }
+body[data-initial-font-size="l"] { --xd-body: 19px; --xd-body-mobile: 15px; }
+@media (min-width: 601px) {
+  [style*="font-size:17px"] { font-size: var(--xd-body, 17px); }
+}
 @media (max-width: 600px) {
-  [style*="font-size:17px"] { font-size: 13px !important; }
+  [style*="font-size:17px"] { font-size: var(--xd-body-mobile, 13px) !important; }
   [style*="font-size:15px"] { font-size: 13px !important; }
   [style*="font-size:14px"] { font-size: 13px !important; }
 }
@@ -114,7 +123,7 @@ video { max-width: 100%; border-radius: 16px; margin-top: 12px; }
 img[style*="border-radius"]:not([width="32"]) { cursor: zoom-in; }
 </style>
 </head>
-<body data-initial-position="<!--INITIAL_POSITION-->" data-initial-fraction="<!--INITIAL_FRACTION-->" data-initial-version="<!--INITIAL_VERSION-->" data-instance-id="<!--INSTANCE_ID-->">
+<body data-initial-position="<!--INITIAL_POSITION-->" data-initial-fraction="<!--INITIAL_FRACTION-->" data-initial-version="<!--INITIAL_VERSION-->" data-instance-id="<!--INSTANCE_ID-->" data-initial-font-size="<!--INITIAL_FONT_SIZE-->">
 <div class="page-wrapper">
 <div id="app">
 <h1>xdigest</h1>
@@ -848,6 +857,10 @@ function absorbServerState(d) {
     syncGenerateButton(d.canGenerate);
   }
   if (typeof d.autoPrefetchSectionKey === 'string') prefetchState = withClaimedSectionKey(prefetchState, d.autoPrefetchSectionKey);
+  // Body-text size preference: bump the dataset attr; CSS does the rest.
+  if (typeof d.fontSize === 'string' && d.fontSize && document.body.dataset.initialFontSize !== d.fontSize) {
+    document.body.dataset.initialFontSize = d.fontSize;
+  }
 }
 
 // Does our current viewport already match the server's anchor?

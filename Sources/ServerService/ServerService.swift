@@ -572,7 +572,8 @@ private func handleRoot(state: DigestState) -> String {
         initialPosition: snap.lastSeenPostId,
         initialFraction: snap.lastSeenFraction,
         initialVersion: snap.version,
-        instanceId: state.instanceId
+        instanceId: state.instanceId,
+        initialFontSize: state.fontSize
     )
     return httpResponse(status: 200, contentType: "text/html; charset=utf-8", body: page)
 }
