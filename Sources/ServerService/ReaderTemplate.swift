@@ -64,7 +64,9 @@ body[data-initial-font-size="s"] { --xd-body: 15px; --xd-body-mobile: 11px; }
 body[data-initial-font-size="m"] { --xd-body: 17px; --xd-body-mobile: 13px; }
 body[data-initial-font-size="l"] { --xd-body: 19px; --xd-body-mobile: 15px; }
 @media (min-width: 601px) {
-  [style*="font-size:17px"] { font-size: var(--xd-body, 17px); }
+  /* !important needed because the matching inline style="font-size:17px"
+   * outranks an attribute-selector rule on specificity grounds. */
+  [style*="font-size:17px"] { font-size: var(--xd-body, 17px) !important; }
 }
 @media (max-width: 600px) {
   [style*="font-size:17px"] { font-size: var(--xd-body-mobile, 13px) !important; }
