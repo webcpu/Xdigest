@@ -866,10 +866,18 @@ function applyServerState(d) {
   absorbServerState(d);
 
   if (mtimeChanged) {
-    // New posts exist on the server. Fetch the new HTML and stash it
-    // as pendingHTML; the user clicks the banner to reveal. Pass the
-    // previous mtime so a failed fetch can roll back and retrigger.
-    fetchPendingDigest(previousMtime);
+    // New posts exist on the server.
+    if (serverPosition && !postById(serverPosition)) {
+      // Another client has already revealed -- catching up via
+      // forceSync or SSE reconnect can merge the digest-change and
+      // position-change into a single event. Auto-apply instead of
+      // stashing behind a banner.
+      fetchAndApply();
+    } else {
+      // No reveal yet; stash and show the banner. Pass previousMtime
+      // so a failed fetch can roll back and retrigger on the next SSE.
+      fetchPendingDigest(previousMtime);
+    }
     return;
   }
 
