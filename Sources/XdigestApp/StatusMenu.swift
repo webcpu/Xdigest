@@ -63,19 +63,19 @@ func buildStatusMenu(
 
     menu.addItem(.separator())
 
-    // Text Size submenu — one 5-level slider per device class. Mac/iPad and
-    // iPhone are tuned independently. Sliders are continuous so the reader
-    // updates live on every tick over SSE.
+    // Text Size submenu — one 5-level slider per ergonomic class. Mac and
+    // touch devices (iPhone + iPad) are tuned independently. Sliders are
+    // continuous so the reader updates live on every tick over SSE.
     let fontSizeItem = NSMenuItem(title: "Text Size", action: nil, keyEquivalent: "")
     let fontSizeSubmenu = NSMenu()
     fontSizeSubmenu.addItem(sizeSliderItem(
-        label: "For Mac & iPad",
+        label: "For Mac",
         current: fontSize,
         action: fontSizeAction
     ))
     fontSizeSubmenu.addItem(.separator())
     fontSizeSubmenu.addItem(sizeSliderItem(
-        label: "For iPhone",
+        label: "For iPhone & iPad",
         current: fontSizeMobile,
         action: fontSizeMobileAction
     ))

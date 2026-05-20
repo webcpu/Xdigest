@@ -59,8 +59,10 @@ html, body {
 @media (min-width: 1400px) { #app { max-width: 1024px; } }
 /* Body-text size preferences (set by macOS status menu, broadcast via SSE).
  * Only the tweet body and quoted body scale; names, handles, timestamps stay fixed.
- * Desktop (Mac, iPad) and mobile (iPhone) are stored separately so each device
- * class can pick its own letter size. */
+ * Mac and "touch devices" (iPhone + iPad) are stored separately so each
+ * ergonomic class can pick its own letter size. Gating on pointer:coarse
+ * rather than viewport width because iPad portrait (744-1024px) and Mac with
+ * a windowed Safari (1024-1366px) overlap on width but differ on input. */
 body[data-initial-font-size="xs"] { --xd-body: 15px; }
 body[data-initial-font-size="s"]  { --xd-body: 16px; }
 body[data-initial-font-size="m"]  { --xd-body: 17px; }
@@ -71,12 +73,14 @@ body[data-initial-font-size-mobile="s"]  { --xd-body-mobile: 13px; }
 body[data-initial-font-size-mobile="m"]  { --xd-body-mobile: 14px; }
 body[data-initial-font-size-mobile="l"]  { --xd-body-mobile: 15px; }
 body[data-initial-font-size-mobile="xl"] { --xd-body-mobile: 16px; }
-@media (min-width: 601px) {
-  /* !important needed because the matching inline style="font-size:17px"
-   * outranks an attribute-selector rule on specificity grounds. */
+@media (pointer: fine) {
+  /* Mac (mouse / trackpad). !important needed because the matching inline
+   * style="font-size:17px" outranks an attribute-selector rule on specificity. */
   [style*="font-size:17px"] { font-size: var(--xd-body, 17px) !important; }
 }
-@media (max-width: 600px) {
+@media (pointer: coarse) {
+  /* iPhone + iPad (touch). Names and handles also collapse to 13px for the
+   * compact card density used on handheld screens. */
   [style*="font-size:17px"] { font-size: var(--xd-body-mobile, 13px) !important; }
   [style*="font-size:15px"] { font-size: 13px !important; }
   [style*="font-size:14px"] { font-size: 13px !important; }

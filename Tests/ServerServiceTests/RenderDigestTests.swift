@@ -223,15 +223,17 @@ func renderQuotedTweetHeaderMatchesMainHeaderSizes() {
     #expect(html.contains("color:#7a8088;font-size:14px;text-decoration:none;"))
 }
 
-@Test("Reader page shrinks inline 14px, 15px, and 17px text to 13px on small viewports")
-func readerPageShrinksTweetTextOnMobile() {
+@Test("Reader page shrinks inline 14px, 15px, and 17px text to 13px on touch devices")
+func readerPageShrinksTweetTextOnTouchDevices() {
     let page = readerPage(digestHTML: "")
 
-    #expect(page.contains("@media (max-width: 600px)"))
+    // Gate on pointer:coarse so iPad joins iPhone in the touch bucket
+    // rather than getting the Mac sizes by accident of viewport width.
+    #expect(page.contains("@media (pointer: coarse)"))
     // 17px body and quoted body collapse to a CSS variable so the
-    // user-picked font size setting applies on mobile too (defaults to 13px).
+    // user-picked font-size setting applies on touch devices (default 13px).
     #expect(page.contains("[style*=\"font-size:17px\"] { font-size: var(--xd-body-mobile, 13px) !important; }"))
-    // 15px name and 14px handle/timestamp stay fixed at 13px on mobile.
+    // 15px name and 14px handle/timestamp stay fixed at 13px on touch.
     #expect(page.contains("[style*=\"font-size:15px\"] { font-size: 13px !important; }"))
     #expect(page.contains("[style*=\"font-size:14px\"] { font-size: 13px !important; }"))
 }
